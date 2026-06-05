@@ -1,6 +1,6 @@
 # AgentX — System Architecture Overview
 
-> **Mục tiêu**: Xây dựng một AI Agent platform tích hợp với các hệ thống doanh nghiệp (ERP, CRM, HRM, ...) thông qua giao diện **chat đơn giản**. Người dùng cuối chỉ cần nhắn tin — agent sẽ tự động hiểu intent, định tuyến tới đúng sub-agent, gọi đúng hệ thống nghiệp vụ và trả kết quả. Toàn bộ cấu hình agent (instructions, skills, subagents, integrations) được quản lý bởi **Admin**.
+> **Mục tiêu**: Xây dựng một AI Agent platform đa năng (system-agnostic), có khả năng tích hợp linh hoạt với bất kỳ hệ thống nào (ERP, CRM, HRM, Databases, File systems, APIs,...) thông qua giao diện **chat đơn giản**. Người dùng cuối chỉ cần nhắn tin — agent sẽ tự động hiểu intent, định tuyến tới đúng sub-agent, kết nối tới các MCP Server do ứng dụng tự cung cấp và trả kết quả. Toàn bộ cấu hình agent (instructions, skills, subagents, integrations) được quản lý động bởi **Admin**.
 
 ---
 
@@ -31,7 +31,7 @@ graph TB
     subgraph L0["Layer 0 — Admin Control Panel"]
         AC["Agent Config<br/>(Instructions, Persona)"]
         SR["Skill & Subagent Registry"]
-        IM["Integration Manager<br/>(MCP + API Adapters)"]
+        IM["Integration Manager<br/>(MCP Connection Configs)"]
         UM["User & Role<br/>Management"]
     end
 
@@ -42,7 +42,7 @@ graph TB
 
     subgraph L2["Layer 2 — Orchestration Engine"]
         RA["Router Agent<br/>(Intent → Subagent)"]
-        SA["Subagent Pool<br/>(HR / Finance / CRM / ...)"]
+        SA["Subagent Pool<br/>(HR / Finance / Custom / ...)"]
         AL["Agent Loop<br/>(ReAct per Subagent)"]
         PB["Prompt Builder<br/>(Instructions + Context)"]
     end
@@ -59,11 +59,10 @@ graph TB
         OPENAI["OpenAI API (Fallback)"]
     end
 
-    subgraph L5["Layer 5 — Integration Layer"]
-        MCP["MCP Server Pool<br/>(ERP/CRM MCP Servers)"]
-        ADP["API Adapters<br/>(non-MCP: REST/SOAP/GraphQL)"]
+    subgraph L5["Layer 5 — Integration Layer (MCP Client)"]
+        MC["MCP Client Pool<br/>(Dynamic Connections)"]
         AV["Action Validator<br/>(Permission Check)"]
-        TR["Tool Registry<br/>(Dynamic, from Admin)"]
+        TR["Tool Registry<br/>(Dynamic, from Admin Config)"]
     end
 
     subgraph L6["Layer 6 — Infrastructure"]
@@ -74,6 +73,12 @@ graph TB
         OBS["Observability"]
     end
 
+    subgraph EXT["External Systems / Hosted MCP Servers"]
+        MCP_ERP["ERP / CRM MCP Server<br/>(Odoo, Salesforce, etc.)"]
+        MCP_COMM["Communication MCP Server<br/>(Slack, Email, etc.)"]
+        MCP_OTHER["Other MCP Servers<br/>(DB, Custom APIs, Bridges)"]
+    end
+
     L0 -- "Config applied at runtime" --> L2
     L0 -- "Register integrations" --> L5
     L1 --> L2
@@ -81,6 +86,7 @@ graph TB
     L2 --> L4
     L4 --> AL
     AL --> L5
+    MC --> EXT
     L2 --> L6
     L3 --> L6
     L5 --> L6
@@ -92,6 +98,7 @@ graph TB
     style L4 fill:#1a1a40,stroke:#ffd700,color:#fff
     style L5 fill:#2c2c54,stroke:#33d9b2,color:#fff
     style L6 fill:#1e1e3f,stroke:#a29bfe,color:#fff
+    style EXT fill:#3a1e1e,stroke:#fd79a8,color:#fff
 ```
 
 ---
@@ -221,7 +228,7 @@ Mỗi lần gọi LLM, Prompt Builder ghép:
 + [User Message hiện tại]
 ```
 
-> 📄 **Detail**: [02-orchestration-engine.md](./02-orchestration-engine.md) *(to be created)*
+> 📄 **Detail**: [02-orchestration-engine.md](./02-orchestration-engine.md)
 
 ---
 
@@ -256,88 +263,81 @@ Mỗi lần gọi LLM, Prompt Builder ghép:
 
 ---
 
-### Layer 5 — Integration Layer
+### Layer 5 — Integration Layer (MCP Client)
 
-<!-- Tầng tích hợp quan trọng nhất: kết nối agent với ERP/CRM/HRM thực tế -->
+<!-- Tầng tích hợp: AgentX đóng vai trò MCP Client kết nối tới các MCP Server tự cung cấp -->
 
-> **Đây là layer đặc trưng nhất của AgentX** so với AI agent thông thường. Hệ thống doanh nghiệp đa dạng — có hệ thống hỗ trợ MCP, có hệ thống chỉ có REST API, thậm chí SOAP. Layer này chuẩn hóa tất cả thành **Tool interface thống nhất** mà Agent Loop có thể gọi.
+> **Đây là layer đặc trưng nhất của AgentX**. AgentX không tự xây dựng các kết nối API riêng lẻ tới từng hệ thống. Thay vào đó, AgentX đóng vai trò là một **MCP Client** thuần túy. Mọi hệ thống cần tích hợp (ERP, CRM, Database, Messaging, v.v.) phải tự cung cấp/hosting các **MCP Server** tương ứng. AgentX chỉ tiếp nhận cấu hình kết nối (tương tự như cách cấu hình của Claude Desktop hoặc các Code IDE) để tự động nạp các công cụ (tools) vào hệ thống tại thời điểm chạy.
 
 ```mermaid
 flowchart TB
     AGENT["Agent Loop"] --> TR["Tool Registry<br/>(Dynamic Tool List từ Admin Config)"]
     TR --> AV["Action Validator<br/>(kiểm tra quyền user)"]
+    AV --> MC["🔌 MCP Client Pool<br/>(Quản lý các kết nối động)"]
 
-    AV --> MCP_POOL["MCP Server Pool"]
-    AV --> API_ADP["API Adapter Engine"]
-
-    subgraph MCP_POOL["MCP Servers (hệ thống hỗ trợ MCP)"]
-        MCP_ERP["ERP MCP Server<br/>(Odoo / SAP MCP)"]
-        MCP_CRM["CRM MCP Server<br/>(Salesforce / HubSpot MCP)"]
-        MCP_CUSTOM["Custom MCP Server<br/>(Nội bộ)"]
+    subgraph EXT["External Hosted MCP Servers (Các hệ thống tự cung cấp)"]
+        MCP_ERP["ERP MCP Server<br/>(Odoo, SAP, etc.)"]
+        MCP_CRM["CRM MCP Server<br/>(Salesforce, Hubspot, etc.)"]
+        MCP_DB["Database MCP Server<br/>(PostgreSQL, MySQL, etc.)"]
+        MCP_BRIDGE["External API Bridge<br/>(Chuyển đổi REST/SOAP cũ sang MCP)"]
     end
 
-    subgraph API_ADP["API Adapter Engine (hệ thống không hỗ trợ MCP)"]
-        REST["REST Adapter<br/>(JSON API)"]
-        SOAP["SOAP Adapter<br/>(Legacy ERP)"]
-        GQL["GraphQL Adapter"]
-        DB_DIRECT["DB Adapter<br/>(Read-only SQL query)"]
-    end
-
-    MCP_POOL --> ERP["ERP System<br/>(HR, Finance, Inventory)"]
-    MCP_POOL --> CRM_SYS["CRM System"]
-    API_ADP --> ERP
-    API_ADP --> CRM_SYS
-    API_ADP --> OTHER["Other Business Systems"]
+    MC -->|SSE / WebSockets| MCP_ERP
+    MC -->|SSE / WebSockets| MCP_CRM
+    MC -->|stdio / local cmd| MCP_DB
+    MC -->|SSE / WebSockets| MCP_BRIDGE
 
     style TR fill:#2d3436,stroke:#33d9b2,color:#fff
     style AV fill:#2d3436,stroke:#ff7675,color:#fff
-    style MCP_POOL fill:#1e3a5f,stroke:#74b9ff,color:#fff
-    style API_ADP fill:#3a1e1e,stroke:#fd79a8,color:#fff
+    style MC fill:#1e3a5f,stroke:#74b9ff,color:#fff
+    style EXT fill:#3a1e1e,stroke:#fd79a8,color:#fff
 ```
 
-#### 5.1 MCP Integration
+#### 5.1 Cấu hình MCP Server (Dynamic MCP Config)
 
-Với hệ thống hỗ trợ **Model Context Protocol (MCP)**:
+Admin có thể đăng ký cấu hình bất kỳ MCP Server nào vào hệ thống dưới dạng JSON (tương tự định dạng của Claude Desktop config hoặc các IDE như Cursor/VS Code). Hệ thống hỗ trợ cả phương thức kết nối qua dòng lệnh (`stdio` - chạy script nội bộ) và kết nối qua mạng (`sse` / `http` - kết nối từ xa).
 
+**Cấu hình mẫu lưu trong Admin Panel:**
+```json
+{
+  "mcpServers": {
+    "erp-system": {
+      "type": "sse",
+      "url": "https://erp.internal/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer ERP_API_SECRET_TOKEN"
+      },
+      "allowed_agents": ["HR Agent", "Finance Agent"]
+    },
+    "postgres-db": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://user:pass@localhost:5432/db"
+      ],
+      "allowed_agents": ["Database Administrator Agent"]
+    },
+    "slack-communication": {
+      "type": "sse",
+      "url": "http://slack-mcp-service:3000/sse",
+      "allowed_agents": ["IT Helpdesk Agent", "General Assistant"]
+    }
+  }
+}
 ```
-Admin đăng ký MCP Server:
-├── name: "Odoo ERP"
-├── transport: "stdio" | "sse" | "http"
-├── endpoint: "http://erp-mcp-server:3000/sse"
-├── auth: { type: "api_key", key: "***" }
-└── allowed_agents: ["HR Agent", "Finance Agent"]
 
-→ Tool Registry tự động import tool list từ MCP Server
-→ Agent có thể gọi tool như: erp.get_leave_balance, erp.submit_leave_request
-```
+#### 5.2 External API-to-MCP Bridge (Cho hệ thống legacy không hỗ trợ MCP)
 
-#### 5.2 API Adapter (non-MCP)
-
-Với hệ thống **chỉ có REST/SOAP API**:
-
-```
-Admin cấu hình API Adapter:
-├── name: "Legacy HRM System"
-├── base_url: "https://hrm.internal/api/v1"
-├── auth: { type: "bearer", token_env: "HRM_API_TOKEN" }
-├── tools:
-│   ├── get_employee_info:
-│   │   ├── method: GET
-│   │   ├── path: "/employees/{employee_id}"
-│   │   └── description: "Lấy thông tin nhân viên theo ID"
-│   └── submit_leave_request:
-│       ├── method: POST
-│       ├── path: "/leave-requests"
-│       └── body_mapping: { ... }
-└── allowed_agents: ["HR Agent"]
-
-→ Tool Registry tạo Tool Definition tương đương MCP
-→ Agent gọi tool: hrm.get_employee_info, hrm.submit_leave_request
-```
+Đối với các hệ thống cũ (legacy) chỉ cung cấp REST API hoặc SOAP và không có kế hoạch hỗ trợ MCP native:
+1. Đơn vị phát triển ứng dụng hoặc bên thứ ba sẽ tự xây dựng và chạy độc lập một **MCP API Bridge** (chạy bên ngoài AgentX).
+2. Bridge này đóng vai trò làm MCP Server: nhận yêu cầu từ AgentX thông qua giao thức MCP (JSON-RPC), chuyển đổi thành REST API/SOAP tương ứng để giao tiếp với hệ thống cũ, sau đó trả về định dạng MCP chuẩn.
+3. AgentX chỉ đơn giản cấu hình kết nối tới Bridge này như một MCP Server thông thường.
 
 #### 5.3 Action Validator
 
-> **Mọi action đều phải qua validation trước khi thực thi** — đây là cơ chế bảo vệ quan trọng nhất.
+> **Mọi action đều phải qua validation trước khi thực thi** — đây là cơ chế bảo vệ quan trọng nhất của AgentX để đảm bảo tính an toàn hệ thống khi chạy các công cụ từ bất kỳ MCP Server nào.
 
 ```
 Validation Pipeline:
@@ -349,7 +349,13 @@ Validation Pipeline:
                      (VD: xóa dữ liệu, gửi email hàng loạt)
 ```
 
-> 📄 **Detail**: [05-integration-layer.md](./05-integration-layer.md) *(to be created)*
+#### 5.4 Xử lý File nhị phân & Tải lên (Binary & File Uploads)
+
+Do giao thức MCP truyền tải JSON-RPC dạng văn bản thuần túy, AgentX áp dụng hai cơ chế để xử lý file nhị phân lớn (như tải file hóa đơn lên ERP):
+*   **Pass-by-Reference (Truyền tham chiếu)**: Lưu file trên Storage nội bộ của AgentX và truyền link tải tạm thời vào tool call của MCP Server để server bên ngoài tự download và gửi lên ERP.
+*   **Pre-signed URL (Client-Side Upload)**: Gọi tool của MCP Server để nhận Pre-signed Upload URL, sau đó Chat UI sẽ tự upload file từ trình duyệt trực tiếp lên ERP.
+
+> 📄 **Detail**: [05-integration-layer.md](./05-integration-layer.md)
 
 ---
 
@@ -575,10 +581,9 @@ docker-compose.yml
 ├── agentx-backend      (Node.js / Hono, port 8000)
 ├── agentx-frontend     (Next.js: Chat UI + Admin Panel, port 3000)
 ├── postgres            (port 5432, with pgvector extension)
-├── redis               (port 6379)
-├── mcp-odoo            (Odoo MCP Server, port 3001) ← example
-└── mcp-custom          (Custom internal MCP Server, port 3002)
+└── redis               (port 6379)
 ```
+*(Lưu ý: Các MCP Server bên ngoài sẽ chạy độc lập và được khai báo địa chỉ kết nối trong cấu hình của AgentX).*
 
 ### 5.2 Production
 
@@ -588,17 +593,17 @@ graph TB
     LB["Load Balancer"] --> API["AgentX Backend<br/>(Node.js / Hono, k8s auto-scale)"]
     API --> PG["PostgreSQL<br/>(Managed)"]
     API --> REDIS["Redis<br/>(Managed)"]
-    API --> MCP_POOL["MCP Server Pool<br/>(internal network)"]
-    MCP_POOL --> ERP_SYS["ERP / CRM<br/>Systems"]
-    API --> API_ADP["API Adapter<br/>(non-MCP targets)"]
-    API_ADP --> LEGACY["Legacy Systems<br/>(REST/SOAP)"]
     API --> OBS["Observability<br/>(Grafana Cloud)"]
+
+    subgraph EXT["External Systems / Hosted MCP Servers"]
+        MCP_SERVERS["External MCP Servers<br/>(Odoo, Salesforce, DB, Bridges, etc.)"]
+    end
+
+    API -->|SSE / stdio / WebSockets| MCP_SERVERS
 
     style FE fill:#1a1a2e,stroke:#00d4ff,color:#fff
     style API fill:#16213e,stroke:#ff6b6b,color:#fff
-    style MCP_POOL fill:#1e3a5f,stroke:#33d9b2,color:#fff
-    style ERP_SYS fill:#1e5f3a,stroke:#55efc4,color:#fff
-    style LEGACY fill:#3a3a1e,stroke:#fdcb6e,color:#fff
+    style EXT fill:#3a1e1e,stroke:#fd79a8,color:#fff
 ```
 
 ---
@@ -611,10 +616,10 @@ graph TB
 |---|----------|--------|---------|
 | 0 | [00-admin-control-panel.md](./00-admin-control-panel.md) | 🔲 Planned | UI/UX Admin Panel, Agent builder, Integration manager, RBAC config |
 | 1 | [01-user-interface.md](./01-user-interface.md) | 🔲 Planned | Chat UI design, streaming implementation, embedded widget |
-| 2 | [02-orchestration-engine.md](./02-orchestration-engine.md) | 🔲 Planned | Router Agent design, Subagent pool, ReAct loop implementation, Prompt Builder |
+| 2 | [02-orchestration-engine.md](./02-orchestration-engine.md) | ✅ Completed | Router Agent design, Subagent pool, ReAct loop implementation, Prompt Builder |
 | 3 | [03-memory-context.md](./03-memory-context.md) | 🔲 Planned | Conversation memory, RAG pipeline, token budget algorithm |
 | 4 | [04-llm-core.md](./04-llm-core.md) | 🔲 Planned | LLM provider abstraction, streaming protocol, model routing, fallback |
-| 5 | [05-integration-layer.md](./05-integration-layer.md) | 🔲 Planned | MCP integration, API Adapter engine, Action Validator, Tool Registry |
+| 5 | [05-integration-layer.md](./05-integration-layer.md) | ✅ Completed | MCP integration, Action Validator, Tool Registry, Binary/Multipart uploads |
 | 6 | [06-infrastructure.md](./06-infrastructure.md) | 🔲 Planned | DB schema (full), migration, caching patterns, deployment configs |
 | 7 | [07-security.md](./07-security.md) | 🔲 Planned | Auth flows, RBAC, API security, action audit trail, data isolation |
 | 8 | [08-api-reference.md](./08-api-reference.md) | 🔲 Planned | REST API endpoints, WebSocket events, Admin API, Integration API |
@@ -631,11 +636,11 @@ graph TB
 | **Subagent** | Agent chuyên biệt cho một domain nghiệp vụ (HR, Finance, CRM...) |
 | **Skill** | Một capability cụ thể được gán cho agent (vd: "check leave balance", "generate report") |
 | **MCP** | Model Context Protocol — chuẩn kết nối LLM với external tools/data sources |
-| **API Adapter** | Wrapper chuyển đổi REST/SOAP API thành Tool interface chuẩn mà Agent có thể gọi |
+| **MCP Bridge / Adapter** | Wrapper chạy bên ngoài, chuyển đổi REST/SOAP API của hệ thống cũ thành MCP Server |
 | **Action Validator** | Middleware kiểm tra quyền và an toàn trước khi thực thi bất kỳ action nào |
 | **ReAct** | Reasoning + Acting — vòng lặp: suy nghĩ → gọi tool → quan sát kết quả → lặp |
 | **RAG** | Retrieval-Augmented Generation — bổ sung context từ knowledge base vào prompt |
-| **Tool Registry** | Danh sách dynamic các tool available, load từ MCP servers + API adapters |
+| **Tool Registry** | Danh sách dynamic các tool available, load từ cấu hình các MCP servers |
 | **Token Budget** | Giới hạn token phân bổ cho từng phần của context window |
 
 ### B. Key Design Decisions
@@ -643,8 +648,8 @@ graph TB
 > **Tại sao không dùng LangChain/LlamaIndex?**  
 > Giữ orchestration tự viết để có full control — debug dễ hơn, không phụ thuộc version updates của framework bên ngoài. Chỉ dùng LangGraph nếu workflow trở nên quá phức tạp (parallel subagents, complex state machines).
 
-> **Tại sao MCP + API Adapter song song?**  
-> Thực tế doanh nghiệp: ít hệ thống hỗ trợ MCP native. API Adapter engine cho phép Admin tích hợp bất kỳ hệ thống nào chỉ bằng config (không cần code), trong khi MCP được ưu tiên khi hệ thống hỗ trợ.
+> **Tại sao yêu cầu hệ thống ngoài tự cung cấp MCP Server thay vì tự viết API Adapter tích hợp sẵn?**  
+> Để đảm bảo AgentX là một nền tảng Agent thuần túy, tối đa hóa tính linh hoạt và khả năng mở rộng thông qua giao thức chuẩn Model Context Protocol (MCP). Bằng cách chuyển giao việc cung cấp MCP Server cho các ứng dụng hoặc triển khai dưới dạng các Bridge độc lập bên ngoài, AgentX không cần thay đổi hay build lại code mỗi khi cần tích hợp thêm hệ thống mới, đồng thời giảm tải bảo trì mã nguồn backend của AgentX.
 
 > **Tại sao pgvector thay vì Pinecone?**  
 > Đơn giản hóa vận hành — một PostgreSQL database cho cả relational data và vector search. Phù hợp scale vừa và nhỏ. Có thể migrate sang Pinecone nếu cần scale lớn hơn.
@@ -660,4 +665,4 @@ graph TB
 ---
 
 *Last updated: 2026-06-05*  
-*Version: 0.2.0 — Revised for ERP/CRM integration use case*
+*Version: 0.3.0 — Revised for generic MCP configuration and client-only architecture*
