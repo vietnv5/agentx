@@ -444,5 +444,148 @@ sequenceDiagram
 
 ---
 
+## 8. User-scoped Authentication (Xác thực động theo người dùng)
+
+Để bảo mật dữ liệu doanh nghiệp, AgentX không sử dụng một Master API Key dùng chung để truy cập hệ thống nghiệp vụ (ERP/CRM) cho mọi người dùng. Thay vào đó, mọi yêu cầu nghiệp vụ đều phải được ủy quyền dưới danh nghĩa của chính người dùng đang thực hiện cuộc trò chuyện (User-scoped Authentication) sử dụng giao thức OAuth 2.1 hoặc Bearer Token cá nhân.
+
+Kiến trúc xác thực động của AgentX tuân thủ triết lý **Metadata-Driven** (cấu hình động qua cơ sở dữ liệu) và **Dynamic Interception** (đánh chặn động) để tránh việc phải lập trình cứng (hardcode) cho từng tích hợp mới.
+
+### 8.1 Sơ đồ tương tác luồng xác thực (Authentication Sequence)
+
+```mermaid
+sequenceDiagram
+    actor User as 👤 End User
+    participant UI as Chat UI (Client)
+    participant AG as AgentX Core (Backend)
+    participant DB as Credential Store (DB)
+    participant MCP as MCP Server / API Bridge
+    participant ERP as ERP System (Odoo/Salesforce)
+
+    User->>UI: "Duyệt phiếu lương cho tôi"
+    UI->>AG: Gửi yêu cầu qua WebSocket/SSE
+    
+    rect rgb(240, 248, 255)
+        Note over AG: Lấy user_id & integration_id của tool
+        AG->>DB: Truy vấn Token (giải mã AES-256)
+        alt Token không tồn tại hoặc hết hạn
+            DB-->>AG: Trả về null / expired
+            AG-->>UI: Lỗi AUTH_REQUIRED + OAuth URL / Token Form Schema
+            UI->>User: Hiển thị giao diện đăng nhập (OAuth popup / Input form)
+            User->>UI: Đăng nhập thành công / Nhập Token
+            UI->>AG: POST /api/auth/save-token
+            AG->>DB: Mã hóa & Lưu token mới
+        end
+    end
+
+    AG->>DB: Lấy token hợp lệ
+    DB-->>AG: Trả về token đã giải mã
+    AG->>MCP: 4. Gọi Tool (Header: Authorization Bearer <UserToken>)
+    MCP->>ERP: 5. Gọi API nghiệp vụ kèm User Token
+    ERP-->>MCP: Trả về dữ liệu
+    MCP-->>AG: Trả về Tool Output
+    AG-->>UI: Stream: "Đã duyệt phiếu lương thành công..."
+```
+
+### 8.2 Cơ chế khám phá yêu cầu Auth (Capabilities & Metadata Discovery)
+
+Theo đặc tả Model Context Protocol (MCP) chuẩn hóa trên giao thức OAuth 2.1:
+1. **Quét Metadata**: Khi cấu hình kết nối một MCP Server (SSE), AgentX Client sẽ thực hiện truy vấn khám phá tài nguyên (`resources/list` hoặc cấu hình manifest của server).
+2. **Khai báo Auth**: MCP Server trả về mô tả cấu hình yêu cầu xác thực cần thiết:
+   ```json
+   {
+     "capabilities": {
+       "auth": {
+         "type": "oauth2",
+         "authorization_url": "https://erp.internal/oauth/authorize",
+         "token_url": "https://erp.internal/oauth/token",
+         "scopes": ["read:payroll", "write:leaves"]
+       }
+     }
+   }
+   ```
+3. **Cấu hình động**: AgentX sẽ tự động lưu thông tin này vào cơ sở dữ liệu và dựng luồng đăng nhập mà không cần lập trình trước cấu trúc API của bên thứ ba.
+
+### 8.3 Đánh chặn lỗi xác thực tại Backend (Dynamic Auth Interception)
+
+Thay vì kiểm tra trước làm chậm hệ thống, AgentX áp dụng mô hình **Late-binding (Liên kết muộn)**. Khi thực hiện cuộc gọi công cụ, nếu token chưa tồn tại hoặc bị ERP từ chối (HTTP 401 / Token Expired):
+
+1. **Bẫy lỗi**: Lớp `Action Validator` hoặc `Integration Manager` bắt lỗi từ ERP/MCP Server.
+2. **Ném lỗi chuẩn hóa**: Hệ thống ném ra mã lỗi `AUTH_REQUIRED` cùng các tham số hướng dẫn đăng nhập.
+
+**Cấu trúc dữ liệu lỗi gửi về Client UI:**
+```json
+{
+  "status": "error",
+  "error_code": "AUTH_REQUIRED",
+  "integration_id": "integration-odoo-uuid",
+  "auth_details": {
+    "type": "oauth2",
+    "url": "https://erp.internal/oauth/authorize?client_id=agentx_client&response_type=code"
+  }
+}
+```
+
+### 8.4 Thiết kế Cơ sở dữ liệu và Bộ tiêm Token động (Dynamic Header Injector)
+
+#### Cấu trúc bảng lưu trữ thông tin đăng nhập (Encrypted User Credentials)
+```sql
+CREATE TABLE user_credentials (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    integration_id UUID NOT NULL REFERENCES integrations(id),
+    encrypted_token TEXT NOT NULL, -- Token của người dùng (mã hóa đối xứng AES-256)
+    refresh_token TEXT,            -- Token làm mới
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Middleware tự động nạp Token động tại Backend (Node.js)
+```typescript
+import { decrypt } from '../utils/crypto';
+import { db } from '../db/client';
+
+export class AuthInterceptor {
+  /**
+   * Tự động lấy và đính kèm token của người dùng hiện tại vào cấu hình kết nối MCP Client
+   */
+  static async injectUserToken(userId: string, integrationId: string, requestHeaders: Record<string, string>) {
+    // 1. Tìm thông tin xác thực của user đối với tích hợp tương ứng
+    const cred = await db.userCredentials.findFirst({
+      where: { userId, integrationId }
+    });
+
+    if (!cred) {
+      throw new Error(`Xác thực yêu cầu cho tích hợp: ${integrationId}`);
+    }
+
+    // 2. Kiểm tra hạn dùng và tự động làm mới nếu là OAuth2
+    let tokenValue = decrypt(cred.encryptedToken);
+    if (cred.expiresAt && new Date() > cred.expiresAt && cred.refreshToken) {
+      tokenValue = await this.refreshOAuth2Token(cred);
+    }
+
+    // 3. Đính kèm token vào Header cho cuộc gọi MCP Client (SSE Transport)
+    requestHeaders['Authorization'] = `Bearer ${tokenValue}`;
+  }
+
+  private static async refreshOAuth2Token(cred: any): Promise<string> {
+     // Logic gọi ERP Token Endpoint để lấy access token mới qua refresh token
+     // Cập nhật lại DB với access token mới và trả về
+     return "new_refreshed_access_token";
+  }
+}
+```
+
+### 8.5 Trải nghiệm hiển thị động tại Chat UI
+
+Khi nhận lỗi `AUTH_REQUIRED` từ Backend, Chat UI sẽ chặn hiển thị tin nhắn lỗi thô và render một component tương tác:
+* **Với OAuth2**: Hiển thị nút bấm liên kết tài khoản (ví dụ: `[🔗 Kết nối tài khoản Odoo ERP]`). Khi click, một cửa sổ popup sẽ mở ra luồng đăng nhập chính thức của ERP. Sau khi hoàn tất đăng nhập, popup đóng lại và gửi tín hiệu cho Chat UI kích hoạt tiếp luồng xử lý.
+* **Với Personal Access Token (Bearer)**: Render một Form Input bảo mật cho phép người dùng dán (paste) token của họ vào:
+  > *"Để tiếp tục thực hiện tác vụ này, bạn vui lòng nhập Personal Access Token được cấp từ hệ thống ERP:"*
+  > `[Nhập Access Token...]` `[Xác nhận]`
+
+---
+
 *Last updated: 2026-06-05*  
-*Version: 0.3.0 — Revised for generic MCP configuration, client-only architecture, and binary/upload patterns*
+*Version: 0.4.0 — Revised for generic MCP configuration, client-only architecture, binary/upload patterns, and dynamic user-scoped authentication*
