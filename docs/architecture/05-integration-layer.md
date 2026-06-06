@@ -34,7 +34,9 @@ sequenceDiagram
 
 ## 2. `@ai-sdk/mcp` Client Implementation
 
-AgentX sử dụng thư viện `@ai-sdk/mcp` làm lớp nền kết nối. Hệ thống hỗ trợ 2 dạng transport chính theo đặc tả MCP: **SSE** (kết nối mạng qua HTTP) và **stdio** (chạy dòng lệnh / script nội bộ).
+AgentX sử dụng thư viện `@ai-sdk/mcp` làm lớp nền kết nối. Hệ thống hỗ trợ 2 dạng transport chính theo đặc tả MCP:
+*   **SSE (Server-Sent Events)**: Kết nối mạng qua giao thức HTTPS. Đây là **phương thức quan trọng nhất và được ưu tiên hàng đầu** cho môi trường doanh nghiệp (production), hỗ trợ hoàn hảo việc xác thực động theo từng người dùng (User-scoped Authentication) và kết nối an toàn tới các dịch vụ SaaS hoặc hệ thống nội bộ được triển khai độc lập.
+*   **stdio (Standard Input/Output)**: Chạy dòng lệnh hoặc script nội bộ trực tiếp trên cùng máy chủ dưới dạng tiến trình con. Phương thức này phù hợp nhất cho quá trình phát triển (local development) hoặc thực thi các công cụ tiện ích hạ tầng không yêu cầu ủy quyền động theo định danh của từng người dùng cuối.
 
 ### 2.1 Cấu hình khởi tạo Client (Dynamic MCP Connection)
 
@@ -211,6 +213,12 @@ app.listen(3001, () => console.log('MCP Bridge running independently on port 300
 
 > **Quy tắc an ninh**: Agent có khả năng tự động gọi API, nên bắt buộc phải kiểm tra quyền của User thực tế trước khi thực thi tool call, tránh việc LLM bị Prompt Injection dẫn đến thực thi các lệnh trái phép.
 
+### Nguyên lý thiết kế Phân quyền (Authorization Principles)
+
+Hệ thống AgentX áp dụng nguyên lý phân quyền hai lớp (Two-layered Authorization) để tối ưu vận hành và bảo mật:
+1.  **Phân quyền tổng quát (High-level / Coarse-grained) trên AgentX**: `Action Validator` chỉ kiểm tra xem vai trò (Role) của người dùng hiện tại có được phép kích hoạt nhóm công cụ đó hay không (tương tự phân quyền trong Claude AI Projects). Ví dụ: kiểm tra xem tài khoản này có thuộc phòng Nhân sự để gọi các tool `hrm.*` hay không.
+2.  **Phân quyền chi tiết (Fine-grained / Data-level / Row-level) trên Hệ thống đích**: Các kiểm tra nghiệp vụ sâu hơn (ví dụ: Nhân viên A chỉ được xem bảng lương của chính mình, không được sửa lương của người khác) **không được quản lý bởi AgentX**. Thay vào đó, nhiệm vụ này được giao hoàn toàn cho hệ thống đích (ERP, CRM, Databases) xử lý dựa trên danh tính người dùng được xác định thông qua mã Token cá nhân (User-scoped Token) truyền đi trong HTTP Header. Điều này giúp ngăn chặn trùng lặp logic phân quyền và đảm bảo bảo mật tự nhiên từ hệ thống gốc.
+
 ```typescript
 import { getPermissions } from './db/auth-store';
 
@@ -220,7 +228,7 @@ export interface UserContext {
 }
 
 /**
- * Middleware kiểm tra quyền thực thi Tool của User
+ * Middleware kiểm tra quyền thực thi Tool của User ở mức tổng quát (High-level check)
  * @returns true nếu hợp lệ, ném Error nếu không có quyền
  */
 export async function validateToolExecution(
@@ -228,7 +236,7 @@ export async function validateToolExecution(
   user: UserContext,
   argumentsData: any
 ): Promise<boolean> {
-  // 1. Tải danh sách quyền của User từ DB
+  // 1. Tải danh sách quyền của User từ DB của AgentX
   const userPermissions = await getPermissions(user.role);
 
   // 2. Kiểm tra xem quyền truy cập có khớp với toolName không
@@ -249,7 +257,7 @@ export async function validateToolExecution(
 }
 
 function sanitizeArgs(args: any) {
-  // Logic lọc các ký tự độc hại, định dạng lại kiểu dữ liệu
+  // Logic lọc các ký tự độc hại, định dạng lại kiểu dữ liệu trước khi gửi đi
 }
 ```
 
@@ -260,25 +268,31 @@ function sanitizeArgs(args: any) {
 Đối với các thao tác ảnh hưởng nghiêm trọng đến dữ liệu doanh nghiệp (Ví dụ: `erp.delete_invoice`, `crm.send_bulk_email`, `hrm.approve_bonus`):
 1. Hệ thống cần chặn hành động thực thi.
 2. Gửi một thẻ xác nhận (Approval Card) về giao diện chat để người dùng trực tiếp bấm nút "Duyệt" (Approve) hoặc "Từ chối" (Reject).
+3. **Lưu trữ trạng thái (Persistence)**: Để đảm bảo tính tin cậy, thông tin chi tiết và trạng thái của yêu cầu phê duyệt bắt buộc phải được lưu trực tiếp xuống Cơ sở dữ liệu (Database). Điều này giúp tránh mất mát thông tin khi server restart hoặc crash, đồng thời cung cấp lịch sử kiểm toán (Audit Logs) hoàn chỉnh.
 
 ### Sơ đồ xử lý Approval Gate
 
 ```
-[Agent Loop] ──> Phát hiện Tool ghi dữ liệu ──> Chặn thực thi & Lưu trạng thái PENDING
-                                                        │
-[Chat UI] <── Stream thẻ xác nhận (Approval Card) ──────┘
+[Agent Loop] ──> Phát hiện Tool cần phê duyệt ──> Chặn thực thi & Lưu PENDING vào DB
+                                                               │
+[Chat UI] <── Stream thẻ xác nhận (Approval Card) ─────────────┘
     │
-User click [Duyệt]
+User click [Duyệt] / [Từ chối]
     │
-[Chat UI] ──> Gửi POST /api/approvals/:id/approve ──────┐
-                                                        ▼
-[Agent Loop] <── Giải phóng trạng thái PENDING & tiếp tục chạy ReAct loop
+[Chat UI] ──> Gửi POST /api/approvals/:id/action (Approve/Reject)
+                                │
+                                ▼
+[Agent Backend] ──> Cập nhật DB trạng thái APPROVED / REJECTED
+                                │
+                                ▼
+[Agent Loop] <── Giải phóng trạng thái PENDING từ DB & tiếp tục chạy ReAct loop
 ```
 
-### Code Triển khai State Machine tại Backend
+### Code Triển khai State Machine tại Backend (Sử dụng DB Persistence)
 
 ```typescript
 import { createId } from '@paralleldrive/cuid2';
+import { db } from './db/client'; // Import Database client
 
 export interface ApprovalRequest {
   id: string;
@@ -289,65 +303,75 @@ export interface ApprovalRequest {
 }
 
 export class ApprovalGateManager {
-  private pendingApprovals: Map<string, ApprovalRequest> = new Map();
-
   /**
-   * Đăng ký một tool cần phê duyệt và treo luồng thực thi
+   * Đăng ký một tool cần phê duyệt, lưu vào DB và treo luồng thực thi để chờ
    */
   async requestApproval(taskId: string, toolName: string, args: any): Promise<any> {
     const approvalId = createId();
-    const approval: ApprovalRequest = {
-      id: approvalId,
-      sessionOrTaskId: taskId,
-      toolName,
-      args,
-      status: 'pending'
-    };
+    
+    // 1. Persist yêu cầu vào Database
+    await db.approvalRequest.create({
+      data: {
+        id: approvalId,
+        sessionOrTaskId: taskId,
+        toolName,
+        args: JSON.stringify(args),
+        status: 'pending'
+      }
+    });
 
-    this.pendingApprovals.set(approvalId, approval);
-
-    // Gửi event qua WebSocket báo UI hiển thị thẻ Approval Card
+    // 2. Gửi event qua WebSocket báo UI hiển thị thẻ Approval Card tương tác
     broadcastToUser(taskId, {
       type: 'approval_required',
       data: { approvalId, toolName, args }
     });
 
-    // Chờ phản hồi từ người dùng (Long Polling hoặc Promise Resolver pattern)
+    // 3. Chờ phản hồi từ người dùng bằng cách lắng nghe trạng thái DB thay đổi
+    // (Trong môi trường scale lớn, có thể dùng Pub/Sub Redis hoặc Event-driven EventEmitter thay cho setInterval)
     return this.waitForUserResponse(approvalId);
   }
 
   private async waitForUserResponse(approvalId: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      const checkInterval = setInterval(() => {
-        const approval = this.pendingApprovals.get(approvalId);
-        if (!approval) {
-          clearInterval(checkInterval);
-          reject(new Error("Approval request deleted."));
-          return;
-        }
+      const checkInterval = setInterval(async () => {
+        try {
+          // Truy vấn trạng thái mới nhất từ DB
+          const approval = await db.approvalRequest.findUnique({
+            where: { id: approvalId }
+          });
 
-        if (approval.status === 'approved') {
+          if (!approval) {
+            clearInterval(checkInterval);
+            reject(new Error("Yêu cầu phê duyệt không tồn tại hoặc đã bị xóa."));
+            return;
+          }
+
+          if (approval.status === 'approved') {
+            clearInterval(checkInterval);
+            resolve({ approved: true, data: JSON.parse(approval.args) });
+          } else if (approval.status === 'rejected') {
+            clearInterval(checkInterval);
+            resolve({ approved: false, reason: 'Người dùng từ chối thực hiện hành động.' });
+          }
+        } catch (error) {
           clearInterval(checkInterval);
-          this.pendingApprovals.delete(approvalId);
-          resolve({ approved: true, data: approval.args });
-        } else if (approval.status === 'rejected') {
-          clearInterval(checkInterval);
-          this.pendingApprovals.delete(approvalId);
-          resolve({ approved: false, reason: 'User rejected the action.' });
+          reject(error);
         }
-      }, 500); // Check every 500ms
+      }, 1000); // Kiểm tra mỗi giây
     });
   }
 
   /**
-   * API Handler khi người dùng click Duyệt trên UI
+   * API Handler xử lý khi người dùng click Duyệt hoặc Từ chối trên Chat UI
    */
-  handleUserAction(approvalId: string, action: 'approve' | 'reject') {
-    const approval = this.pendingApprovals.get(approvalId);
-    if (approval) {
-      approval.status = action === 'approve' ? 'approved' : 'rejected';
-      this.pendingApprovals.set(approvalId, approval);
-    }
+  async handleUserAction(approvalId: string, action: 'approve' | 'reject'): Promise<void> {
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    
+    // Cập nhật trạng thái phê duyệt trong Database để giải phóng Agent Loop đang chờ
+    await db.approvalRequest.update({
+      where: { id: approvalId },
+      data: { status }
+    });
   }
 }
 ```

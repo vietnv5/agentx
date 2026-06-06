@@ -469,6 +469,9 @@ erDiagram
 
 > 📄 **Detail**: [06-infrastructure.md](./06-infrastructure.md) *(to be created)*
 
+**Lưu ý thiết kế Database**:
+*   `AGENT.config` (JSONB): Lưu trữ các cấu hình động của Agent bao gồm danh sách `allowed_tools` (mảng string tên các công cụ được phép chạy, ví dụ: `["erp_leave_request", "erp_payslip"]`), `maxSteps` (giới hạn ReAct loop), và các tham số bổ sung khác. Thiết kế này giúp quản lý phân quyền sử dụng công cụ của Agent một cách động và gọn gàng mà không cần tạo các bảng liên kết quan hệ phức tạp ở mức độ công cụ đơn lẻ.
+
 ---
 
 ## 3. Data Flow
