@@ -370,7 +370,7 @@ Do giao thức MCP truyền tải JSON-RPC dạng văn bản thuần túy, Agent
 | **PostgreSQL** | Chat history, agent/skill config, user data, audit log mọi action | PostgreSQL 16+ |
 | **Vector DB** | Lưu embeddings cho RAG — knowledge base doanh nghiệp (quy trình, FAQ...) | pgvector (extension của PG) |
 | **Redis** | Session cache, rate limiting, pub/sub cho streaming events | Redis 7+ |
-| **Auth & RBAC** | Xác thực user, phân quyền Admin vs End User, quản lý API keys | Clerk hoặc Supabase Auth |
+| **Auth & RBAC** | Xác thực user, phân quyền Admin vs End User, quản lý API keys | JWT tự quản lý (Self-hosted) |
 | **Config Store** | Lưu Agent configs, Tool Registry, Integration settings (versioned) | PostgreSQL + Redis cache |
 | **Observability** | Structured logs, LLM cost tracking, integration error monitoring | OpenTelemetry + Grafana |
 
@@ -561,9 +561,9 @@ sequenceDiagram
 
 | Layer | Technology | Lý do chọn |
 |-------|-----------|------------|
-| **Frontend (Chat UI)** | Next.js 15 + Vercel AI SDK | Streaming out-of-box, dễ embed, React ecosystem |
-| **Admin Panel** | Next.js 15 (same codebase, admin routes) | Tái sử dụng components, single deployment |
-| **Backend** | Node.js (Hono / NestJS / Express) + TS | Phù hợp nhất để chạy các bộ thư viện AI SDK thế hệ mới và duy trì kết nối real-time |
+| **Frontend (Chat UI)** | Next.js 15 + HeroUI 3 + Tailwind CSS v4 + Vercel AI SDK | Giao diện hiện đại, tối ưu hiệu năng, responsive, streaming out-of-box, dễ embed |
+| **Admin Panel** | Next.js 15 (same codebase, admin routes) + HeroUI 3 | Tái sử dụng components, single deployment |
+| **Backend** | Node.js (NestJS) + TypeScript | Framework modular, cấu trúc rõ ràng, dễ scale và bảo trì, phù hợp chạy các bộ thư viện AI SDK |
 | **Agent Orchestration** | Vercel AI SDK Core & UI | Đơn giản hóa việc quản lý vòng lặp ReAct, hỗ trợ streaming UI và quản lý MCP native |
 | **LLM Primary** | Anthropic Claude API (Sonnet / Haiku) | Tool use tốt nhất, streaming, large context |
 | **LLM Fallback** | OpenAI GPT-4o | Độ available cao |
@@ -571,9 +571,9 @@ sequenceDiagram
 | **API Adapter** | Custom adapter engine (Node.js + Fetch/Axios) | Chuyển đổi REST/SOAP API thành MCP Tool |
 | **Database** | PostgreSQL 16 + pgvector | Một DB cho cả relational + vector, đơn giản vận hành |
 | **Cache / Session** | Redis 7 | Session agent loop, rate limit, hot config cache |
-| **Auth** | Clerk hoặc Supabase Auth | RBAC, JWT, dễ tích hợp |
+| **Auth** | JWT (JSON Web Token) tự quản lý | Đảm bảo tính bảo mật, độc lập dữ liệu, phân quyền RBAC mặc định, tạo sẵn tài khoản Admin |
 | **Observability** | OpenTelemetry + Grafana + Loki | LLM cost tracking, integration error monitoring |
-| **Deployment** | Docker Compose (dev) → Kubernetes (prod) | Progressive scale |
+| **Deployment** | Docker Compose & Docker | Triển khai độc lập các container nhanh chóng, tối ưu hóa môi trường dev/prod |
 
 ---
 
