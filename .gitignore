@@ -1,0 +1,6 @@
+/apps/api/dist/
+/apps/api/node_modules/
+/node_modules/
+/.idea/
+/apps/api/.env
+/apps/web/.env

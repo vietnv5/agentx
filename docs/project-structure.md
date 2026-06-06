@@ -114,7 +114,7 @@ apps/web/
 │   │   │   └── layout.tsx         # Sidebar, Navbar dùng chung
 │   │   ├── globals.css            # CSS toàn cục & Tailwind v4
 │   │   ├── layout.tsx             # Root layout cấu hình HTML/Body
-│   │   └── providers.tsx          # Wrapper cho HeroUIProvider, AuthProvider
+│   │   └── providers.tsx          # Wrapper cho RouterProvider, AuthProvider
 │   │
 │   ├── components/                # Shared Components (Chỉ chứa UI Components dùng chung)
 │   │   ├── ui/                    # Wrapper tùy biến các component từ HeroUI

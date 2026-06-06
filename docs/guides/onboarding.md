@@ -164,17 +164,30 @@ pnpm dev:api
 
 Backend sẽ chạy tại `http://localhost:8000`.
 
-Khi khởi động lần đầu, bạn sẽ thấy logs:
+Khi khởi chạy, bạn sẽ thấy logs hiển thị thông tin khởi tạo và đường dẫn truy cập rõ ràng:
 
 ```
-[DatabaseSeeder] ====================================================
-[DatabaseSeeder] TÀI KHOẢN ADMIN MẶC ĐỊNH ĐÃ ĐƯỢC KHỞI TẠO!
-[DatabaseSeeder] Email: admin@agentx.local
-[DatabaseSeeder] Password: Admin@123456
-[DatabaseSeeder] ====================================================
+[Nest] LOG [NestApplication] Nest application successfully started +1ms
+[Nest] LOG [Bootstrap] ====================================================
+[Nest] LOG [Bootstrap] 🚀 Application is running on: http://localhost:8000/api
+[Nest] LOG [Bootstrap] 📖 Swagger API Document is on: http://localhost:8000/docs
+[Nest] LOG [Bootstrap] ====================================================
 ```
 
-Kiểm tra health:
+*(Nếu khởi động lần đầu và đã cấu hình DB, log seeding cũng sẽ xuất hiện tự động để tạo tài khoản admin: `admin@agentx.local` / `Admin@123456`)*.
+
+### 5.2 API Documentation (Swagger Docs)
+Tài liệu API được cấu hình tự động thông qua Swagger UI. Sau khi backend khởi chạy thành công, bạn có thể truy cập trực tiếp tại:
+👉 **http://localhost:8000/docs**
+
+Tại đây, bạn có thể xem chi tiết tất cả các endpoint, các schemas DTOs đầu vào/đầu ra, và thực hiện gọi thử trực tiếp bằng Bearer Token.
+
+### 5.3 Request Logging
+Mọi request HTTP gửi tới API đều được tự động ghi lại log qua `LoggerMiddleware` theo định dạng:
+`[HTTP] <METHOD> <URL> <STATUS_CODE> - <DURATION>ms - IP: <IP_ADDRESS>`
+Giúp dễ dàng theo dõi và gỡ lỗi trong quá trình phát triển.
+
+### 5.4 Kiểm tra health:
 
 ```bash
 curl http://localhost:8000/api/health
@@ -227,16 +240,16 @@ Vì Next.js App Router mặc định dùng Server Components, ta cần một Cli
 "use client";
 
 import * as React from "react";
-import { HeroUIProvider } from "@heroui/react";
+import { RouterProvider } from "@heroui/react";
 import { useRouter } from "next/navigation";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <HeroUIProvider navigate={router.push}>
+    <RouterProvider navigate={router.push}>
       {children}
-    </HeroUIProvider>
+    </RouterProvider>
   );
 }
 ```
@@ -397,7 +410,7 @@ pnpm install --no-strict-peer-dependencies
 
 ### HeroUI components not rendering
 
-Kiểm tra `providers.tsx` đã wrap `HeroUIProvider` và `globals.css` đã import `@heroui/styles`.
+Kiểm tra `providers.tsx` đã wrap `RouterProvider` và `globals.css` đã import `@heroui/styles`.
 
 ---
 
