@@ -54,10 +54,10 @@ AgentX sử dụng hàm `streamText` từ Vercel AI SDK Core để tự động 
 
 ```typescript
 import { streamText, type CoreMessage } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
 import { getAgentConfig } from './db/agent-store';
 import { IntegrationManager } from './integration-manager';
 import { validateToolExecution } from './action-validator';
+import { LlmService } from './llm/llm.service';
 
 interface ChatSession {
   sessionId: string;
@@ -67,7 +67,10 @@ interface ChatSession {
 }
 
 export class Orchestrator {
-  constructor(private integrationManager: IntegrationManager) {}
+  constructor(
+    private integrationManager: IntegrationManager,
+    private llmService: LlmService
+  ) {}
 
   /**
    * Chạy luồng xử lý tin nhắn chính
@@ -82,7 +85,20 @@ export class Orchestrator {
     const targetAgentId = await this.routeIntent(userMessage, session.history);
     const agentConfig = await getAgentConfig(targetAgentId);
 
-    // 2. Lấy danh sách tools tương ứng được gán cho Agent này
+    // 2. Phân giải Model động thông qua LlmService
+    const agentContext = {
+      agentType: agentConfig.name,
+      definition: {
+        llmProvider: agentConfig.llmProvider,
+        llmModel: agentConfig.llmModel,
+      },
+    };
+    const binding = await this.llmService.resolveModel(
+      agentConfig.tier || 'smart', // Mặc định là 'smart' tier
+      agentContext
+    );
+
+    // 3. Lấy danh sách tools tương ứng được gán cho Agent này
     // Bản thân các tools này liên kết tới các MCP Server tương ứng
     const allTools = this.integrationManager.getAllTools();
     const allowedTools: Record<string, any> = {};
@@ -104,9 +120,9 @@ export class Orchestrator {
       }
     }
 
-    // 3. Thực thi ReAct loop qua streamText
+    // 4. Thực thi ReAct loop qua streamText với Model đã phân giải động
     const result = streamText({
-      model: anthropic(agentConfig.modelName), // Ví dụ: 'claude-3-5-sonnet-20241022'
+      model: binding.model, // model từ factory đã được nạp credentials
       system: `${agentConfig.systemInstructions}
       
                Bạn đang hỗ trợ người dùng có ID là ${session.userId} với vai trò ${session.userRole}. 

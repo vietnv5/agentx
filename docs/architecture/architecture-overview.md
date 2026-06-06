@@ -54,9 +54,9 @@ graph TB
     end
 
     subgraph L4["Layer 4 — LLM Core"]
-        LLM_R["LLM Router & Fallback"]
-        CLAUDE["Claude API (Primary)"]
-        OPENAI["OpenAI API (Fallback)"]
+        LLM_S["LlmService (Tier Router)"]
+        LLM_F["LlmProviderFactory (Server Env)"]
+        PROVIDERS["Claude / OpenAI / Google / DeepSeek"]
     end
 
     subgraph L5["Layer 5 — Integration Layer (MCP Client)"]
@@ -252,14 +252,16 @@ Mỗi lần gọi LLM, Prompt Builder ghép:
 
 <!-- Kết nối LLM: routing model, streaming, fallback -->
 
+> **Dynamic LLM Engine**: Hỗ trợ phân giải Model động theo Tiers (`fast`, `smart`, `vision`) dựa trên cấu hình Platform-level và hỗ trợ ghi đè linh hoạt cho từng Agent.
+
 | Component | Description |
 |-----------|-------------|
-| **LLM Router** | Mỗi Agent có thể dùng model khác nhau (cấu hình bởi Admin) — Agent đơn giản dùng Haiku, Agent phức tạp dùng Sonnet |
-| **Claude API** | Primary — tool use, streaming, 200K context |
-| **OpenAI API** | Fallback khi Claude không available hoặc rate limit |
-| **Streaming Handler** | Parse SSE chunks, detect tool call events, route về Response Router |
+| **LlmService** | Phân giải Model theo Tier được yêu cầu hoặc cấu hình ghi đè của Agent. Quản lý luồng gọi LLM (generate/stream), đo lường token và tính toán chi phí thực tế. |
+| **LlmProviderFactory** | Khởi tạo đối tượng `LanguageModel` của Vercel AI SDK bằng cách đọc trực tiếp API Key / Base URL tương ứng từ biến môi trường (env). |
+| **Multi-Provider Engine** | Tích hợp sâu với các nhà cung cấp OpenAI, Anthropic, Google Gemini, DeepSeek, Ollama... |
+| **Metering & Cost Tracker** | Ghi nhận token tiêu thụ thời gian thực và tự động đóng băng (freeze) chi phí phát sinh theo USD dựa trên bảng giá tại thời điểm gọi. |
 
-> 📄 **Detail**: [04-llm-core.md](./04-llm-core.md) *(to be created)*
+> 📄 **Detail**: [04-llm-core.md](./04-llm-core.md)
 
 ---
 
@@ -621,7 +623,7 @@ graph TB
 | 1 | [01-user-interface.md](./01-user-interface.md) | 🔲 Planned | Chat UI design, streaming implementation, embedded widget |
 | 2 | [02-orchestration-engine.md](./02-orchestration-engine.md) | ✅ Completed | Router Agent design, Subagent pool, ReAct loop implementation, Prompt Builder |
 | 3 | [03-memory-context.md](./03-memory-context.md) | 🔲 Planned | Conversation memory, RAG pipeline, token budget algorithm |
-| 4 | [04-llm-core.md](./04-llm-core.md) | 🔲 Planned | LLM provider abstraction, streaming protocol, model routing, fallback |
+| 4 | [04-llm-core.md](./04-llm-core.md) | ✅ Completed | LLM provider abstraction, dynamic platform-level resolution, tiers, overrides, cost metering |
 | 5 | [05-integration-layer.md](./05-integration-layer.md) | ✅ Completed | MCP integration, Action Validator, Tool Registry, Binary/Multipart uploads |
 | 6 | [06-infrastructure.md](./06-infrastructure.md) | 🔲 Planned | DB schema (full), migration, caching patterns, deployment configs |
 | 7 | [07-security.md](./07-security.md) | 🔲 Planned | Auth flows, RBAC, API security, action audit trail, data isolation |
