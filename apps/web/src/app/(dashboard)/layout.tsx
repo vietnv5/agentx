@@ -3,9 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/src/features/auth/auth-store";
 import { apiClient } from "@/src/lib/api-client";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { LanguageSwitch } from "@/components/language-switch";
 import {
   LayoutDashboard,
   Bot,
@@ -24,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const t = useTranslations();
 
   React.useEffect(() => {
     // Nếu chưa đăng nhập, chuyển hướng sang login
@@ -49,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-default-500">Đang tải...</p>
+          <p className="text-sm text-default-500">{t("loading")}</p>
         </div>
       </div>
     );
@@ -69,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Danh sách routes chung
   const generalRoutes = [
-    { name: "Chat Playground", path: "/chat", icon: MessageSquare },
+    { name: t("nav.playground"), path: "/chat", icon: MessageSquare },
   ];
 
   return (
@@ -90,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-7">
           {/* General Section */}
           <div className="space-y-2">
-            <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">Playground</span>
+            <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">{t("nav.playground")}</span>
             <div className="space-y-1">
               {generalRoutes.map((route) => {
                 const Icon = route.icon;
@@ -117,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Admin Control Section */}
           {isAdmin && (
             <div className="space-y-2">
-              <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">Admin Control</span>
+              <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">{t("nav.adminControl")}</span>
               <div className="space-y-1">
                 {adminRoutes.map((route) => {
                   const Icon = route.icon;
@@ -147,8 +150,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="rounded-lg border border-yellow-500/10 bg-yellow-500/5 p-3 flex gap-2">
               <ShieldAlert className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
               <div className="text-xs text-default-400">
-                <span className="font-semibold text-yellow-500">Staff Mode</span>
-                <p className="mt-0.5 leading-relaxed">Bạn không có quyền xem trang Admin.</p>
+                <span className="font-semibold text-yellow-500">{t("staffMode.title")}</span>
+                <p className="mt-0.5 leading-relaxed">{t("staffMode.desc")}</p>
               </div>
             </div>
           )}
@@ -166,14 +169,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="text-[10px] text-default-400 truncate">{user.email}</p>
               </div>
             </div>
-            <ThemeSwitch className="text-default-500 hover:text-foreground shrink-0" />
+            <div className="flex items-center gap-1 shrink-0">
+              <ThemeSwitch className="text-default-500 hover:text-foreground shrink-0" />
+              <span className="w-[1px] h-3 bg-default-300/60 mx-1" />
+              <LanguageSwitch />
+            </div>
           </div>
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors cursor-pointer"
           >
             <LogOut className="h-4.5 w-4.5" />
-            Đăng xuất
+            {t("logout")}
           </button>
         </div>
       </aside>

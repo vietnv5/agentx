@@ -1,0 +1,11 @@
+{
+  "save": "Lưu",
+  "cancel": "Huỷ",
+  "loading": "Đang tải...",
+  "logout": "Đăng xuất",
+  "error.connection": "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.",
+  "nav.playground": "Playground",
+  "nav.adminControl": "Admin Control",
+  "staffMode.title": "Staff Mode",
+  "staffMode.desc": "Bạn không có quyền xem trang Admin."
+}

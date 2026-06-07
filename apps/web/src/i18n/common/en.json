@@ -1,0 +1,11 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "loading": "Loading...",
+  "logout": "Logout",
+  "error.connection": "A connection error occurred. Please try again.",
+  "nav.playground": "Playground",
+  "nav.adminControl": "Admin Control",
+  "staffMode.title": "Staff Mode",
+  "staffMode.desc": "You do not have permission to view the Admin panel."
+}
