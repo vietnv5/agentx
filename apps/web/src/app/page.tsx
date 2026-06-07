@@ -4,8 +4,34 @@ import React from "react";
 import { Card } from "@heroui/react";
 import { Bot, Cpu, Shield, Zap, ArrowRight, Database } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function Home() {
+  const t = useTranslations();
+
+  const features = [
+    {
+      icon: <Bot className="w-5 h-5" />,
+      title: t("home.feature.specialist.title"),
+      description: t("home.feature.specialist.desc"),
+    },
+    {
+      icon: <Cpu className="w-5 h-5" />,
+      title: t("home.feature.mcp.title"),
+      description: t("home.feature.mcp.desc"),
+    },
+    {
+      icon: <Database className="w-5 h-5" />,
+      title: t("home.feature.knowledge.title"),
+      description: t("home.feature.knowledge.desc"),
+    },
+    {
+      icon: <Shield className="w-5 h-5" />,
+      title: t("home.feature.security.title"),
+      description: t("home.feature.security.desc"),
+    },
+  ];
+
   return (
     <div className="relative min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/5 via-background to-background overflow-hidden px-6 pb-16">
       {/* Background glow effects */}
@@ -17,19 +43,20 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase tracking-wider animate-pulse">
-            <Zap className="w-3.5 h-3.5" /> Next-Gen AI Orchestrator
+            <Zap className="w-3.5 h-3.5" /> {t("home.badge")}
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground leading-tight">
-            Đột phá Hiệu suất với <br />
-            <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-              Trí tuệ Nhân tạo Đa Agent
-            </span>
+            {t.rich("home.title", {
+              br: () => <br />,
+              gradient: (chunks) => (
+                <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
+                  {chunks}
+                </span>
+              ),
+            })}
           </h1>
           <p className="text-base md:text-lg text-default-500 max-w-2xl mx-auto leading-relaxed">
-            AgentX Platform giúp doanh nghiệp dễ dàng thiết lập, vận hành và
-            giám sát mạng lưới nhân sự số thông minh. Tự động hóa mọi quy trình
-            phức tạp thông qua các Specialist Agents kết nối công cụ qua giao
-            thức MCP.
+            {t("home.subtitle")}
           </p>
         </div>
 
@@ -39,14 +66,14 @@ export default function Home() {
             className="px-8 py-4 rounded-xl text-black bg-gradient-to-r from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/15 hover:shadow-emerald-500/25 hover:opacity-95 transition-all duration-300 font-semibold flex items-center justify-center gap-2 cursor-pointer text-sm"
             href="/chat"
           >
-            Trải nghiệm Chat Playground
+            {t("home.cta.chat")}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             className="px-8 py-4 rounded-xl border border-default-300 hover:bg-default-100 text-foreground transition-all duration-300 font-semibold flex items-center justify-center gap-2 cursor-pointer text-sm"
             href="/admin"
           >
-            Quản trị Hệ thống
+            {t("home.cta.admin")}
           </Link>
         </div>
 
@@ -73,30 +100,3 @@ export default function Home() {
     </div>
   );
 }
-
-const features = [
-  {
-    icon: <Bot className="w-5 h-5" />,
-    title: "Specialist Agents",
-    description:
-      "Xây dựng các Agent chuyên môn hóa cao, định nghĩa kỹ năng và gán vai trò vận hành tự động theo mục tiêu.",
-  },
-  {
-    icon: <Cpu className="w-5 h-5" />,
-    title: "MCP Integrations",
-    description:
-      "Kết nối không giới hạn tới cơ sở dữ liệu, APIs, file system qua giao thức chuẩn hóa Model Context Protocol.",
-  },
-  {
-    icon: <Database className="w-5 h-5" />,
-    title: "Knowledge Base (RAG)",
-    description:
-      "Tích hợp cơ sở tri thức doanh nghiệp sử dụng pgvector RAG giúp Agent có câu trả lời chính xác theo ngữ cảnh.",
-  },
-  {
-    icon: <Shield className="w-5 h-5" />,
-    title: "Audit Logs & Security",
-    description:
-      "Giám sát lịch sử gọi tool và chi phí Token toàn diện, bảo mật thông tin API với cơ chế mã hóa AES-256.",
-  },
-];

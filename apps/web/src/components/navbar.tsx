@@ -8,8 +8,10 @@ import clsx from "clsx";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GithubIcon, SearchIcon, Logo } from "@/components/icons";
+import { useTranslations } from "next-intl";
 
 export const Navbar = () => {
+  const t = useTranslations();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const searchInput = (
@@ -47,7 +49,7 @@ export const Navbar = () => {
                   )}
                   href={item.href}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </NextLink>
               </li>
             ))}
@@ -69,7 +71,7 @@ export const Navbar = () => {
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
             href="/login"
           >
-            Đăng nhập
+            {t("nav.login")}
           </Link>
         </div>
 
@@ -87,7 +89,7 @@ export const Navbar = () => {
             className="text-xs font-semibold px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors mr-1"
             href="/login"
           >
-            Đăng nhập
+            {t("nav.login")}
           </Link>
           <button
             aria-expanded={isMenuOpen}
@@ -126,7 +128,7 @@ export const Navbar = () => {
           <div className="p-4">{searchInput}</div>
           <ul className="flex flex-col gap-2 px-4 pb-4">
             {siteConfig.navMenuItems.map((item, index) => (
-              <li key={`${item.label}-${index}`}>
+              <li key={`${item.labelKey}-${index}`}>
                 <Link
                   className={clsx(
                     "block py-2 text-lg no-underline",
@@ -138,7 +140,7 @@ export const Navbar = () => {
                   )}
                   href="#"
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               </li>
             ))}

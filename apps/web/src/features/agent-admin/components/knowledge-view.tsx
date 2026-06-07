@@ -27,6 +27,7 @@ import {
   TextField,
   Label,
 } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
@@ -48,6 +49,7 @@ interface SearchResult {
 }
 
 export function KnowledgeView() {
+  const t = useTranslations();
   const [documents, setDocuments] = React.useState<Document[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -72,12 +74,12 @@ export function KnowledgeView() {
       setDocuments(data);
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Không thể tải danh sách tài liệu",
+        err.response?.data?.message || t("knowledge.alert.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     loadData();
@@ -107,14 +109,14 @@ export function KnowledgeView() {
       setFormContent("");
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Tải tài liệu lên thất bại");
+      alert(err.response?.data?.message || t("knowledge.alert.uploadFailed"));
     }
   };
 
   const handleDeleteDoc = async (id: string) => {
     if (
       !confirm(
-        "Bạn có muốn xóa tài liệu này? Toàn bộ vector chunks liên quan sẽ bị xóa sạch.",
+        t("knowledge.confirm.delete"),
       )
     )
       return;
@@ -122,7 +124,7 @@ export function KnowledgeView() {
       await adminService.deleteKnowledge(id);
       loadData();
     } catch (err: any) {
-      alert("Xóa tài liệu thất bại");
+      alert(t("knowledge.alert.deleteFailed"));
     }
   };
 
@@ -139,7 +141,7 @@ export function KnowledgeView() {
 
       setSearchResults(data);
     } catch (err: any) {
-      alert("Tìm kiếm ngữ nghĩa lỗi");
+      alert(t("knowledge.alert.searchFailed"));
     } finally {
       setSearching(false);
     }
@@ -150,7 +152,7 @@ export function KnowledgeView() {
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
         <span className="text-default-500 text-sm">
-          Đang tải danh sách tri thức...
+          {t("knowledge.loading")}
         </span>
       </div>
     );
@@ -163,11 +165,10 @@ export function KnowledgeView() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FolderOpen className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
-            Cơ sở Tri thức (Knowledge Base)
+            {t("knowledge.title")}
           </h1>
           <p className="text-sm text-default-500">
-            Tải lên các tài liệu hướng dẫn nghỉ phép, cẩm nang để cung cấp dữ
-            liệu ngữ cảnh RAG cho Agents.
+            {t("knowledge.subtitle")}
           </p>
         </div>
         {!isUploading && (
@@ -177,7 +178,7 @@ export function KnowledgeView() {
             onClick={() => setIsUploading(true)}
           >
             <Plus className="h-4 w-4" />
-            Thêm Tài liệu
+            {t("knowledge.addDoc")}
           </Button>
         )}
       </div>
@@ -195,7 +196,7 @@ export function KnowledgeView() {
           <form className="space-y-6" onSubmit={handleUploadSubmit}>
             <div className="flex items-center justify-between border-b border-default-150 pb-3">
               <h2 className="text-lg font-bold text-foreground">
-                Tải tài liệu tri thức mới
+                {t("knowledge.editor.title")}
               </h2>
               <Button
                 isIconOnly
@@ -211,11 +212,11 @@ export function KnowledgeView() {
             <div className="space-y-4">
               <TextField isRequired className="w-full" name="title">
                 <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                  Tiêu đề tài liệu
+                  {t("knowledge.editor.docTitle")}
                 </Label>
                 <Input
                   className="text-foreground"
-                  placeholder="e.g. Quy trình xin nghỉ phép năm 2026"
+                  placeholder={t("knowledge.editor.docTitlePlaceholder")}
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                 />
@@ -224,26 +225,26 @@ export function KnowledgeView() {
               <div className="grid gap-4 grid-cols-2">
                 <div>
                   <span className="text-xs font-semibold text-default-500 block mb-1">
-                    Loại định dạng
+                    {t("knowledge.editor.format")}
                   </span>
                   <select
                     className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
                     value={formSourceType}
                     onChange={(e) => setFormSourceType(e.target.value)}
                   >
-                    <option value="markdown">Markdown (.md)</option>
-                    <option value="text">Văn bản thuần (.txt)</option>
+                    <option value="markdown">{t("knowledge.editor.formatMarkdown")}</option>
+                    <option value="text">{t("knowledge.editor.formatText")}</option>
                   </select>
                 </div>
               </div>
 
               <TextField isRequired className="w-full" name="content">
                 <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                  Nội dung văn bản
+                  {t("knowledge.editor.content")}
                 </Label>
                 <TextArea
                   className="text-foreground text-xs font-mono"
-                  placeholder="Dán nội dung tài liệu hướng dẫn vào đây. Hệ thống sẽ tự động chia nhỏ thành các chunks và tính toán embeddings..."
+                  placeholder={t("knowledge.editor.contentPlaceholder")}
                   rows={10}
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
@@ -258,14 +259,14 @@ export function KnowledgeView() {
                 variant="ghost"
                 onClick={() => setIsUploading(false)}
               >
-                Hủy bỏ
+                {t("knowledge.editor.cancel")}
               </Button>
               <Button
                 className="cursor-pointer font-bold"
                 type="submit"
                 variant="primary"
               >
-                Indexing & Lưu trữ
+                {t("knowledge.editor.save")}
               </Button>
             </div>
           </form>
@@ -278,26 +279,26 @@ export function KnowledgeView() {
         <Card className="lg:col-span-2 bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
-            Tài liệu đã lập chỉ mục (Indexed Documents)
+            {t("knowledge.list.title")}
           </h2>
 
           <div className="overflow-x-auto">
-            <Table aria-label="Bảng tài liệu" className="w-full">
+            <Table aria-label={t("knowledge.list.tableAriaLabel")} className="w-full">
               <TableHeader>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  TIÊU ĐỀ TÀI LIỆU
+                  {t("knowledge.list.colTitle")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  LOẠI FILE
+                  {t("knowledge.list.colFormat")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  SỐ LƯỢNG CHUNKS
+                  {t("knowledge.list.colChunks")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  TRẠNG THÁI
+                  {t("knowledge.list.colStatus")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-right">
-                  HÀNH ĐỘNG
+                  {t("knowledge.list.colActions")}
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -343,7 +344,7 @@ export function KnowledgeView() {
                         onClick={() => handleDeleteDoc(doc.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Xóa
+                        {t("knowledge.list.delete")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -354,7 +355,7 @@ export function KnowledgeView() {
                       className="text-default-400 italic text-center py-6"
                       colSpan={5}
                     >
-                      Chưa có tài liệu nào trong Cơ sở tri thức.
+                      {t("knowledge.list.empty")}
                     </TableCell>
                     <TableCell className="hidden" />
                     <TableCell className="hidden" />
@@ -372,18 +373,17 @@ export function KnowledgeView() {
           <div className="space-y-1">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Search className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-              Semantic Search Debugger
+              {t("knowledge.search.title")}
             </h2>
             <p className="text-[10px] text-default-450">
-              Giả lập tìm kiếm tương đồng để kiểm tra sự phân chia chunks và độ
-              chính xác của vector embeddings.
+              {t("knowledge.search.subtitle")}
             </p>
           </div>
 
           <form className="flex gap-2" onSubmit={handleSearchTest}>
             <input
               className="flex-1 bg-default-100 text-foreground border border-default-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500"
-              placeholder="Nhập câu hỏi để tìm chunks..."
+              placeholder={t("knowledge.search.placeholder")}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -419,7 +419,7 @@ export function KnowledgeView() {
                       Chunk #{result.chunkIndex}
                     </span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                      {similarity.toFixed(1)}% match
+                      {similarity.toFixed(1)}% {t("knowledge.search.match")}
                     </span>
                   </div>
                   <p className="text-default-600 font-mono text-[10px] break-words">
@@ -430,8 +430,7 @@ export function KnowledgeView() {
             })}
             {searchResults.length === 0 && !searching && (
               <p className="text-xs text-default-450 italic text-center py-8">
-                Nhập câu hỏi kiểm tra ở trên để xem các vector chunks khớp ngữ
-                nghĩa nhất từ pgvector.
+                {t("knowledge.search.empty")}
               </p>
             )}
           </div>

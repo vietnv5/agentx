@@ -3,10 +3,12 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/navbar";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useTranslations();
   // Nếu là route chat hoặc admin, trả về children thô để page layout tự kiểm soát (full-screen)
   const isDashboard =
     pathname.startsWith("/chat") ||
@@ -29,7 +31,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       </main>
       <footer className="w-full flex items-center justify-center py-3 border-t border-default-100">
         <span className="text-default-400 text-sm">
-          Powered by HeroUI & AgentX Platform
+          {t("footer.poweredBy")}
         </span>
       </footer>
     </div>

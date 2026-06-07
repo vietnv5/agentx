@@ -23,6 +23,7 @@ import {
   TextField,
   Label,
 } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
@@ -51,6 +52,7 @@ interface Integration {
 }
 
 export default function IntegrationsView() {
+  const t = useTranslations();
   const [integrations, setIntegrations] = React.useState<Integration[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -87,12 +89,12 @@ export default function IntegrationsView() {
       setIntegrations(data);
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Không thể tải danh sách tích hợp",
+        err.response?.data?.message || t("integrations.alert.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     loadData();
@@ -143,7 +145,7 @@ export default function IntegrationsView() {
       }
     } catch (err) {
       alert(
-        "Định dạng JSON cấu hình phụ trợ (Headers, Args, Env) không hợp lệ.",
+        t("integrations.alert.jsonInvalid"),
       );
 
       return;
@@ -170,14 +172,14 @@ export default function IntegrationsView() {
       resetForm();
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Lưu kết nối MCP thất bại");
+      alert(err.response?.data?.message || t("integrations.alert.saveFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (
       !confirm(
-        "Bạn có chắc chắn muốn xóa MCP Integration này? Toàn bộ tool definitions sẽ bị xóa.",
+        t("integrations.confirm.delete"),
       )
     )
       return;
@@ -185,7 +187,7 @@ export default function IntegrationsView() {
       await adminService.deleteIntegration(id);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Xóa tích hợp thất bại");
+      alert(err.response?.data?.message || t("integrations.alert.deleteFailed"));
     }
   };
 
@@ -203,7 +205,7 @@ export default function IntegrationsView() {
         ...prev,
         [id]: {
           success: false,
-          error: err.response?.data?.message || "Kiểm tra kết nối lỗi",
+          error: err.response?.data?.message || t("integrations.alert.testError"),
         },
       }));
     } finally {
@@ -214,10 +216,10 @@ export default function IntegrationsView() {
   const handleSyncTools = async (id: string) => {
     try {
       await adminService.syncIntegration(id);
-      alert("Đồng bộ danh sách tools thành công!");
+      alert(t("integrations.alert.syncSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Đồng bộ thất bại");
+      alert(err.response?.data?.message || t("integrations.alert.syncFailed"));
     }
   };
 
@@ -229,7 +231,7 @@ export default function IntegrationsView() {
       await adminService.toggleToolApproval(toolId, !currentVal);
       loadData();
     } catch (err: any) {
-      alert("Không thể thay đổi phân quyền tool");
+      alert(t("integrations.alert.permissionFailed"));
     }
   };
 
@@ -238,7 +240,7 @@ export default function IntegrationsView() {
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
         <span className="text-default-500 text-sm">
-          Đang tải danh sách MCP integrations...
+          {t("integrations.loading")}
         </span>
       </div>
     );
@@ -251,11 +253,10 @@ export default function IntegrationsView() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Plug className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
-            Tích hợp MCP Servers
+            {t("integrations.title")}
           </h1>
           <p className="text-sm text-default-500">
-            Kết nối các Model Context Protocol servers để cung cấp công cụ tự
-            động cho Agents.
+            {t("integrations.subtitle")}
           </p>
         </div>
         {!isEditing && (
@@ -265,7 +266,7 @@ export default function IntegrationsView() {
             onClick={() => setIsEditing(true)}
           >
             <Plus className="h-4 w-4" />
-            Đăng ký Server
+            {t("integrations.register")}
           </Button>
         )}
       </div>
@@ -277,8 +278,8 @@ export default function IntegrationsView() {
             <div className="flex items-center justify-between border-b border-default-150 pb-3">
               <h2 className="text-lg font-bold text-foreground">
                 {editingId
-                  ? `Cập nhật cấu hình: ${formName}`
-                  : "Đăng ký MCP Server mới"}
+                  ? t("integrations.editor.titleEdit", { name: formName })
+                  : t("integrations.editor.titleCreate")}
               </h2>
               <Button
                 isIconOnly
@@ -296,11 +297,11 @@ export default function IntegrationsView() {
               <div className="space-y-4">
                 <TextField isRequired className="w-full" name="name">
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                    Tên tích hợp (Friendly Name)
+                    {t("integrations.editor.name")}
                   </Label>
                   <Input
                     className="text-foreground"
-                    placeholder="e.g. Git MCP Server"
+                    placeholder={t("integrations.editor.namePlaceholder")}
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                   />
@@ -308,11 +309,11 @@ export default function IntegrationsView() {
 
                 <TextField className="w-full" name="description">
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                    Mô tả tích hợp
+                    {t("integrations.editor.desc")}
                   </Label>
                   <TextArea
                     className="text-foreground"
-                    placeholder="Giải thích tính năng của server này mang lại..."
+                    placeholder={t("integrations.editor.descPlaceholder")}
                     rows={2}
                     value={formDesc}
                     onChange={(e) => setFormDesc(e.target.value)}
@@ -322,28 +323,28 @@ export default function IntegrationsView() {
                 <div className="grid gap-4 grid-cols-2">
                   <div>
                     <span className="text-xs font-semibold text-default-500 block mb-1">
-                      Phương thức kết nối (Transport)
+                      {t("integrations.editor.transport")}
                     </span>
                     <select
                       className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
                       value={formTransport}
                       onChange={(e) => setFormTransport(e.target.value as any)}
                     >
-                      <option value="stdio">stdio (Local Command)</option>
-                      <option value="sse">sse (HTTP Server-Sent Events)</option>
+                      <option value="stdio">{t("integrations.editor.transportStdio")}</option>
+                      <option value="sse">{t("integrations.editor.transportSse")}</option>
                     </select>
                   </div>
                   <div>
                     <span className="text-xs font-semibold text-default-500 block mb-1">
-                      Trạng thái (Status)
+                      {t("integrations.editor.status")}
                     </span>
                     <select
                       className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
                       value={formStatus}
                       onChange={(e) => setFormStatus(e.target.value as any)}
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="active">{t("integrations.editor.statusActive")}</option>
+                      <option value="inactive">{t("integrations.editor.statusInactive")}</option>
                     </select>
                   </div>
                 </div>
@@ -355,22 +356,22 @@ export default function IntegrationsView() {
                   <div className="space-y-4">
                     <TextField isRequired className="w-full" name="endpoint">
                       <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                        SSE Endpoint URL
+                        {t("integrations.editor.sseUrl")}
                       </Label>
                       <Input
                         className="text-foreground"
-                        placeholder="e.g. http://localhost:3001/sse"
+                        placeholder={t("integrations.editor.sseUrlPlaceholder")}
                         value={formEndpoint}
                         onChange={(e) => setFormEndpoint(e.target.value)}
                       />
                     </TextField>
                     <TextField className="w-full" name="headers">
                       <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                        Custom Headers (JSON)
+                        {t("integrations.editor.headers")}
                       </Label>
                       <TextArea
                         className="text-foreground font-mono text-xs"
-                        placeholder='e.g. {"Authorization": "Bearer token"}'
+                        placeholder={t("integrations.editor.headersPlaceholder")}
                         rows={4}
                         value={formHeaders}
                         onChange={(e) => setFormHeaders(e.target.value)}
@@ -381,22 +382,22 @@ export default function IntegrationsView() {
                   <div className="space-y-4">
                     <TextField isRequired className="w-full" name="command">
                       <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                        Lệnh chạy Command
+                        {t("integrations.editor.command")}
                       </Label>
                       <Input
                         className="text-foreground"
-                        placeholder="e.g. npx or node"
+                        placeholder={t("integrations.editor.commandPlaceholder")}
                         value={formCommand}
                         onChange={(e) => setFormCommand(e.target.value)}
                       />
                     </TextField>
                     <TextField className="w-full" name="args">
                       <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                        Đối số lệnh Args (JSON Array)
+                        {t("integrations.editor.args")}
                       </Label>
                       <TextArea
                         className="text-foreground font-mono text-xs"
-                        placeholder='e.g. ["-y", "@modelcontextprotocol/server-git"]'
+                        placeholder={t("integrations.editor.argsPlaceholder")}
                         rows={3}
                         value={formArgs}
                         onChange={(e) => setFormArgs(e.target.value)}
@@ -404,11 +405,11 @@ export default function IntegrationsView() {
                     </TextField>
                     <TextField className="w-full" name="env">
                       <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                        Biến môi trường Env (JSON Object)
+                        {t("integrations.editor.env")}
                       </Label>
                       <TextArea
                         className="text-foreground font-mono text-xs"
-                        placeholder='e.g. {"GITHUB_PERSONAL_ACCESS_TOKEN": "..."}'
+                        placeholder={t("integrations.editor.envPlaceholder")}
                         rows={3}
                         value={formEnv}
                         onChange={(e) => setFormEnv(e.target.value)}
@@ -426,14 +427,14 @@ export default function IntegrationsView() {
                 variant="ghost"
                 onClick={resetForm}
               >
-                Hủy bỏ
+                {t("integrations.editor.cancel")}
               </Button>
               <Button
                 className="cursor-pointer font-bold"
                 type="submit"
                 variant="primary"
               >
-                Lưu kết nối
+                {t("integrations.editor.save")}
               </Button>
             </div>
           </form>
@@ -468,7 +469,7 @@ export default function IntegrationsView() {
                       {integration.name}
                     </h3>
                     <p className="text-xs text-default-500 mt-1">
-                      {integration.description || "Không có mô tả"}
+                      {integration.description || t("integrations.list.noDesc")}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-default-100 text-default-655 border border-default-200 font-mono">
@@ -493,7 +494,7 @@ export default function IntegrationsView() {
                 {integration.syncError && (
                   <div className="max-w-md bg-red-500/5 border border-red-500/10 rounded-lg p-2.5 text-xs text-red-500 dark:text-red-400 leading-relaxed font-mono">
                     <span className="font-semibold block mb-0.5 text-red-305">
-                      Lỗi đồng bộ:
+                      {t("integrations.list.syncError")}
                     </span>
                     {integration.syncError}
                   </div>
@@ -513,7 +514,7 @@ export default function IntegrationsView() {
                     ) : (
                       <Play className="h-3.5 w-3.5" />
                     )}
-                    Test Connection
+                    {t("integrations.list.testConnection")}
                   </Button>
                   <Button
                     className="cursor-pointer border border-default-200 text-default-600 hover:bg-default-50"
@@ -522,7 +523,7 @@ export default function IntegrationsView() {
                     onClick={() => handleSyncTools(integration.id)}
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
-                    Sync Tools
+                    {t("integrations.list.syncTools")}
                   </Button>
                   <Button
                     className="cursor-pointer border border-default-200 text-default-600 hover:bg-default-50"
@@ -531,7 +532,7 @@ export default function IntegrationsView() {
                     onClick={() => handleEdit(integration)}
                   >
                     <Edit2 className="h-3.5 w-3.5" />
-                    Sửa
+                    {t("integrations.list.edit")}
                   </Button>
                   <Button
                     className="cursor-pointer"
@@ -540,7 +541,7 @@ export default function IntegrationsView() {
                     onClick={() => handleDelete(integration.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Xóa
+                    {t("integrations.list.delete")}
                   </Button>
                 </div>
               </div>
@@ -559,12 +560,13 @@ export default function IntegrationsView() {
                       <CheckCircle className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <div className="text-xs">
                         <span className="font-bold text-foreground">
-                          Kết nối thành công!
+                          {t("integrations.list.testSuccess")}
                         </span>
                         <p className="text-default-500 mt-1 leading-relaxed">
-                          Phát hiện {test.tools?.length || 0} tools từ server:{" "}
-                          {test.tools?.map((t) => t.name).join(", ") ||
-                            "không có tools"}
+                          {t("integrations.list.testSuccessDetail", {
+                            count: test.tools?.length || 0,
+                            tools: test.tools?.map((t: any) => t.name).join(", ") || t("integrations.list.noTools")
+                          })}
                         </p>
                       </div>
                     </>
@@ -573,7 +575,7 @@ export default function IntegrationsView() {
                       <XCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                       <div className="text-xs">
                         <span className="font-bold text-foreground">
-                          Kết nối thất bại
+                          {t("integrations.list.testFailed")}
                         </span>
                         <p className="text-red-500 dark:text-red-400 mt-1 leading-relaxed font-mono">
                           {test.error}
@@ -586,8 +588,8 @@ export default function IntegrationsView() {
 
               {/* Discovered Tools Accordion */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-default-450">
-                  Tools Definitions ({integration.toolDefinitions?.length || 0})
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-default-455">
+                  {t("integrations.list.toolsHeader", { count: integration.toolDefinitions?.length || 0 })}
                 </h4>
 
                 <Accordion className="px-0" variant="surface">
@@ -604,7 +606,7 @@ export default function IntegrationsView() {
                             </span>
                             <div className="flex items-center gap-4">
                               <span className="text-[10px] text-default-500 truncate max-w-[200px] md:max-w-xs block font-sans">
-                                {tool.description || "Không có mô tả"}
+                                {tool.description || t("integrations.list.toolNoDesc")}
                               </span>
                               <div
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-all focus:outline-none ${
@@ -634,8 +636,8 @@ export default function IntegrationsView() {
                               >
                                 <Lock className="h-3 w-3" />
                                 {tool.requiresApproval
-                                  ? "Cần phê duyệt"
-                                  : "Tự động chạy"}
+                                  ? t("integrations.list.requiresApproval")
+                                  : t("integrations.list.autoRun")}
                               </div>
                             </div>
                           </div>
@@ -646,15 +648,15 @@ export default function IntegrationsView() {
                         <Accordion.Body className="text-xs space-y-3 p-1 font-sans text-default-650 leading-relaxed">
                           <div>
                             <span className="font-bold text-default-700">
-                              Mô tả:
+                              {t("integrations.list.toolDesc")}
                             </span>
                             <p className="mt-0.5">
-                              {tool.description || "Chưa thiết lập mô tả"}
+                              {tool.description || t("integrations.list.toolNoDescSet")}
                             </p>
                           </div>
                           <div>
                             <span className="font-bold text-default-700">
-                              Input Schema (JSON Schema):
+                              {t("integrations.list.inputSchema")}
                             </span>
                             <pre className="mt-1 bg-default-100 p-3 rounded-lg overflow-x-auto text-[10px] font-mono border border-default-150">
                               {JSON.stringify(tool.inputSchema, null, 2)}
@@ -668,8 +670,7 @@ export default function IntegrationsView() {
                 {(!integration.toolDefinitions ||
                   integration.toolDefinitions.length === 0) && (
                   <p className="text-xs text-default-455 italic text-center py-4 border border-dashed border-default-200 rounded-lg">
-                    Chưa có tools nào được đồng bộ. Hãy bấm nút Sync Tools để
-                    đồng bộ tools.
+                    {t("integrations.list.noToolsSynced")}
                   </p>
                 )}
               </div>
@@ -681,7 +682,7 @@ export default function IntegrationsView() {
           <div className="py-12 flex flex-col items-center justify-center gap-3 border border-dashed border-default-200 rounded-xl bg-default-100/20">
             <Plug className="h-10 w-10 text-default-400" />
             <p className="text-default-550 text-sm">
-              Chưa có kết nối MCP Server nào được cấu hình.
+              {t("integrations.list.noIntegrations")}
             </p>
             <Button
               size="sm"
@@ -689,7 +690,7 @@ export default function IntegrationsView() {
               onClick={() => setIsEditing(true)}
             >
               <Plus className="h-4 w-4" />
-              Đăng ký Server
+              {t("integrations.register")}
             </Button>
           </div>
         )}

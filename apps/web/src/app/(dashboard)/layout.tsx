@@ -68,12 +68,12 @@ export default function DashboardLayout({
 
   // Danh sách routes cho Admin
   const adminRoutes = [
-    { name: "Overview", path: "/admin", icon: LayoutDashboard },
-    { name: "Agents Builder", path: "/admin/agents", icon: Bot },
-    { name: "MCP Integrations", path: "/admin/integrations", icon: Plug },
-    { name: "Users & Roles", path: "/admin/users", icon: Users },
-    { name: "Knowledge Base", path: "/admin/knowledge", icon: FolderOpen },
-    { name: "Audit Logs", path: "/admin/audit", icon: FileCode },
+    { name: t("nav.overview"), path: "/admin", icon: LayoutDashboard },
+    { name: t("nav.agentsBuilder"), path: "/admin/agents", icon: Bot },
+    { name: t("nav.mcpIntegrations"), path: "/admin/integrations", icon: Plug },
+    { name: t("nav.usersRoles"), path: "/admin/users", icon: Users },
+    { name: t("nav.knowledgeBase"), path: "/admin/knowledge", icon: FolderOpen },
+    { name: t("nav.auditLogs"), path: "/admin/audit", icon: FileCode },
   ];
 
   // Danh sách routes chung
@@ -92,7 +92,7 @@ export default function DashboardLayout({
               AX
             </div>
             <span className="text-lg font-bold tracking-tight text-foreground">
-              AgentX Platform
+              {t("app.name")}
             </span>
           </Link>
         </div>

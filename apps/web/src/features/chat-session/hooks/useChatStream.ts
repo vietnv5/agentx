@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
+import { useTranslations } from "next-intl";
 
 export interface ToolLog {
   toolName: string;
@@ -17,6 +18,7 @@ export interface PendingApproval {
 }
 
 export function useChatStream() {
+  const t = useTranslations();
   const { accessToken } = useAuthStore.getState();
   const [isStreaming, setIsStreaming] = React.useState(false);
   const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(
@@ -47,7 +49,7 @@ export function useChatStream() {
       const reader = response.body?.getReader();
 
       if (!reader) {
-        throw new Error("Không thể khởi tạo luồng đọc.");
+        throw new Error(t("chat.stream.initError"));
       }
 
       const decoder = new TextDecoder();
@@ -103,7 +105,7 @@ export function useChatStream() {
                   await onComplete();
                 }
               } else if (event === "error") {
-                alert(`Lỗi thực thi agent: ${data}`);
+                alert(t("chat.stream.agentError", { error: data }));
               }
             } catch (e) {
               // Parse error
@@ -112,7 +114,7 @@ export function useChatStream() {
         }
       }
     } catch (err: any) {
-      alert(`Lỗi kết nối stream: ${err.message}`);
+      alert(t("chat.stream.connError", { error: err.message }));
     } finally {
       setIsStreaming(false);
       setRunningTool(null);

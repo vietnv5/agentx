@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
+import { useTranslations, useLocale } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
@@ -41,6 +42,8 @@ interface LlmUsageLog {
 }
 
 export function AuditView() {
+  const t = useTranslations();
+  const locale = useLocale();
   const [toolsLogs, setToolsLogs] = React.useState<ToolExecution[]>([]);
   const [llmLogs, setLlmLogs] = React.useState<LlmUsageLog[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -59,12 +62,12 @@ export function AuditView() {
       setLlmLogs(llmData);
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Không thể tải dữ liệu kiểm toán",
+        err.response?.data?.message || t("audit.alert.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     loadData();
@@ -75,7 +78,7 @@ export function AuditView() {
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
         <span className="text-default-500 text-sm">
-          Đang tải dữ liệu logs kiểm toán...
+          {t("audit.loading")}
         </span>
       </div>
     );
@@ -87,11 +90,10 @@ export function AuditView() {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <FileCode className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
-          Nhật ký Kiểm toán (Audit Logs)
+          {t("audit.title")}
         </h1>
         <p className="text-sm text-default-500">
-          Giám sát các thao tác gọi công cụ nhạy cảm và thống kê chi phí sử dụng
-          API mô hình ngôn ngữ lớn.
+          {t("audit.subtitle")}
         </p>
       </div>
 
@@ -109,33 +111,33 @@ export function AuditView() {
           <div className="space-y-1">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Activity className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
-              Lịch sử Gọi MCP Tools (Gần đây nhất)
+              {t("audit.tools.title")}
             </h2>
             <p className="text-[10px] text-default-450">
-              Chi tiết cuộc gọi công cụ, thời gian chạy và tham số đầu vào/ra.
+              {t("audit.tools.subtitle")}
             </p>
           </div>
 
           <div className="overflow-x-auto">
-            <Table aria-label="Bảng log tool" className="w-full">
+            <Table aria-label={t("audit.list.tableAriaLabelTool")} className="w-full">
               <TableHeader>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  TÊN TOOL
+                  {t("audit.tools.colName")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  THAM SỐ GỌI (INPUT)
+                  {t("audit.tools.colInput")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  KẾT QUẢ TRẢ VỀ (OUTPUT)
+                  {t("audit.tools.colOutput")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  TRẠNG THÁI
+                  {t("audit.tools.colStatus")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  ĐỘ TRỄ
+                  {t("audit.tools.colDuration")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-right">
-                  THỜI GIAN
+                  {t("audit.tools.colTime")}
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -185,8 +187,8 @@ export function AuditView() {
                     <TableCell className="text-center text-xs text-default-600 font-mono">
                       {log.durationMs ? `${log.durationMs}ms` : "-"}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-default-450 font-mono">
-                      {new Date(log.executedAt).toLocaleString("vi-VN")}
+                    <TableCell className="text-right text-xs text-default-455 font-mono">
+                      {new Date(log.executedAt).toLocaleString(locale === "vi" ? "vi-VN" : "en-US")}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -196,7 +198,7 @@ export function AuditView() {
                       className="text-default-400 italic text-center py-6"
                       colSpan={6}
                     >
-                      Chưa ghi nhận cuộc gọi tool nào trong hệ thống.
+                      {t("audit.tools.empty")}
                     </TableCell>
                     <TableCell className="hidden" />
                     <TableCell className="hidden" />
@@ -215,37 +217,36 @@ export function AuditView() {
           <div className="space-y-1">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Cpu className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-              Lịch sử Sử dụng Token & Chi phí LLM API
+              {t("audit.llm.title")}
             </h2>
             <p className="text-[10px] text-default-450">
-              Báo cáo lượng token sử dụng, chi phí tính theo USD, và độ trễ phản
-              hồi LLM.
+              {t("audit.llm.subtitle")}
             </p>
           </div>
 
           <div className="overflow-x-auto">
-            <Table aria-label="Bảng log LLM" className="w-full">
+            <Table aria-label={t("audit.list.tableAriaLabelLlm")} className="w-full">
               <TableHeader>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  AGENT
+                  {t("audit.llm.colAgent")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  PROVIDER
+                  {t("audit.llm.colProvider")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  MODEL
+                  {t("audit.llm.colModel")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  TOKENS (I / O / T)
+                  {t("audit.llm.colTokens")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  CHI PHÍ
+                  {t("audit.llm.colCost")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  ĐỘ TRỄ
+                  {t("audit.llm.colLatency")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-right">
-                  THỜI GIAN
+                  {t("audit.llm.colTime")}
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -255,7 +256,7 @@ export function AuditView() {
                     className="border-b border-default-100 hover:bg-default-50/50"
                   >
                     <TableCell className="font-semibold text-foreground">
-                      {log.agent?.name || "Router Agent"}
+                      {log.agent?.name || t("audit.llm.routerAgent")}
                     </TableCell>
                     <TableCell className="text-default-500 capitalize">
                       {log.provider}
@@ -276,8 +277,8 @@ export function AuditView() {
                     <TableCell className="text-center text-xs text-default-600 font-mono">
                       {log.latencyMs ? `${log.latencyMs}ms` : "-"}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-default-450 font-mono">
-                      {new Date(log.createdAt).toLocaleString("vi-VN")}
+                    <TableCell className="text-right text-xs text-default-455 font-mono">
+                      {new Date(log.createdAt).toLocaleString(locale === "vi" ? "vi-VN" : "en-US")}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -287,7 +288,7 @@ export function AuditView() {
                       className="text-default-400 italic text-center py-6"
                       colSpan={7}
                     >
-                      Chưa ghi nhận log sử dụng LLM nào trong hệ thống.
+                      {t("audit.llm.empty")}
                     </TableCell>
                     <TableCell className="hidden" />
                     <TableCell className="hidden" />

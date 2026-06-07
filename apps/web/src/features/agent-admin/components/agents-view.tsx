@@ -12,6 +12,7 @@ import {
   TextField,
   Label,
 } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
@@ -42,6 +43,7 @@ interface ToolOption {
 }
 
 export default function AgentsView() {
+  const t = useTranslations();
   const [agents, setAgents] = React.useState<Agent[]>([]);
   const [tools, setTools] = React.useState<ToolOption[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -80,12 +82,12 @@ export default function AgentsView() {
       setTools(toolsData);
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Không thể tải cấu hình agents/tools",
+        err.response?.data?.message || t("agents.alert.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     loadData();
@@ -171,17 +173,17 @@ export default function AgentsView() {
       resetForm();
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Lưu Agent thất bại");
+      alert(err.response?.data?.message || t("agents.alert.saveFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa Agent này?")) return;
+    if (!confirm(t("agents.confirm.delete"))) return;
     try {
       await adminService.deleteAgent(id);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Xóa Agent thất bại");
+      alert(err.response?.data?.message || t("agents.alert.deleteFailed"));
     }
   };
 
@@ -190,7 +192,7 @@ export default function AgentsView() {
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
         <span className="text-default-500 text-sm">
-          Đang tải danh sách agents...
+          {t("agents.loading")}
         </span>
       </div>
     );
@@ -203,10 +205,10 @@ export default function AgentsView() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Bot className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
-            Quản lý AI Agents
+            {t("agents.title")}
           </h1>
           <p className="text-sm text-default-500">
-            Xây dựng Specialist Agents, thiết lập prompt hệ thống và gán tools.
+            {t("agents.subtitle")}
           </p>
         </div>
         {!isEditing && (
@@ -216,7 +218,7 @@ export default function AgentsView() {
             onClick={() => setIsEditing(true)}
           >
             <Plus className="h-4 w-4" />
-            Tạo Agent
+            {t("agents.create")}
           </Button>
         )}
       </div>
@@ -234,7 +236,7 @@ export default function AgentsView() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="flex items-center justify-between border-b border-default-150 pb-3">
               <h2 className="text-lg font-bold text-foreground">
-                {editingId ? `Cấu hình Agent: ${formName}` : "Tạo AI Agent mới"}
+                {editingId ? t("agents.editor.titleEdit", { name: formName }) : t("agents.editor.titleCreate")}
               </h2>
               <Button
                 isIconOnly
@@ -252,11 +254,11 @@ export default function AgentsView() {
               <div className="space-y-4">
                 <TextField isRequired className="w-full" name="name">
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                    Tên Agent (Unique)
+                    {t("agents.editor.name")}
                   </Label>
                   <Input
                     className="text-foreground"
-                    placeholder="Ví dụ: Leave Assistant"
+                    placeholder={t("agents.editor.namePlaceholder")}
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                   />
@@ -268,11 +270,11 @@ export default function AgentsView() {
                   name="systemInstructions"
                 >
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                    System Instructions (Prompt)
+                    {t("agents.editor.instructions")}
                   </Label>
                   <TextArea
                     className="text-foreground"
-                    placeholder="System instructions định hướng hành vi của agent..."
+                    placeholder={t("agents.editor.instructionsPlaceholder")}
                     rows={6}
                     value={formPrompt}
                     onChange={(e) => setFormPrompt(e.target.value)}
@@ -282,7 +284,7 @@ export default function AgentsView() {
                 <div className="grid gap-4 grid-cols-2">
                   <div>
                     <span className="text-xs font-semibold text-default-500 block mb-1">
-                      Provider LLM
+                      {t("agents.editor.llmProvider")}
                     </span>
                     <select
                       className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
@@ -295,11 +297,11 @@ export default function AgentsView() {
                   </div>
                   <div>
                     <span className="text-xs font-semibold text-default-500 block mb-1">
-                      Model LLM
+                      {t("agents.editor.llmModel")}
                     </span>
                     <input
                       className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
-                      placeholder="e.g. gpt-4o"
+                      placeholder={t("agents.editor.llmModelPlaceholder")}
                       type="text"
                       value={formModel}
                       onChange={(e) => setFormModel(e.target.value)}
@@ -310,7 +312,7 @@ export default function AgentsView() {
                 <div className="grid gap-4 grid-cols-2">
                   <TextField className="w-full" name="maxSteps">
                     <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                      ReAct Max Steps
+                      {t("agents.editor.maxSteps")}
                     </Label>
                     <Input
                       className="text-foreground"
@@ -323,7 +325,7 @@ export default function AgentsView() {
                   </TextField>
                   <div>
                     <span className="text-xs font-semibold text-default-500 block mb-1">
-                      Hoạt động (Active)
+                      {t("agents.editor.active")}
                     </span>
                     <div className="flex h-[42px] items-center">
                       <Checkbox
@@ -340,7 +342,7 @@ export default function AgentsView() {
                     onChange={setFormIsRouter}
                   >
                     <Label className="text-sm font-medium text-default-600">
-                      Router Agent (Phân loại ý định)
+                      {t("agents.editor.routerAgent")}
                     </Label>
                   </Checkbox>
                 </div>
@@ -351,7 +353,7 @@ export default function AgentsView() {
                 {/* Skills Section */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-default-500">
-                    Danh sách Skills
+                    {t("agents.editor.skills")}
                   </h3>
                   {/* Skill List */}
                   <div className="flex flex-wrap gap-2">
@@ -372,7 +374,7 @@ export default function AgentsView() {
                     ))}
                     {formSkills.length === 0 && (
                       <span className="text-xs text-default-400 italic">
-                        Chưa khai báo skill nào.
+                        {t("agents.editor.noSkills")}
                       </span>
                     )}
                   </div>
@@ -381,7 +383,7 @@ export default function AgentsView() {
                     <div className="col-span-1">
                       <input
                         className="w-full bg-default-100 text-foreground border border-default-200 rounded p-2 text-xs focus:outline-none focus:border-emerald-500"
-                        placeholder="Tên skill"
+                        placeholder={t("agents.editor.skillNamePlaceholder")}
                         type="text"
                         value={newSkillName}
                         onChange={(e) => setNewSkillName(e.target.value)}
@@ -390,7 +392,7 @@ export default function AgentsView() {
                     <div className="col-span-1">
                       <input
                         className="w-full bg-default-100 text-foreground border border-default-200 rounded p-2 text-xs focus:outline-none focus:border-emerald-500"
-                        placeholder="Mô tả skill"
+                        placeholder={t("agents.editor.skillDescPlaceholder")}
                         type="text"
                         value={newSkillDesc}
                         onChange={(e) => setNewSkillDesc(e.target.value)}
@@ -402,7 +404,7 @@ export default function AgentsView() {
                       variant="secondary"
                       onClick={handleAddSkill}
                     >
-                      Thêm
+                      {t("agents.editor.addSkill")}
                     </Button>
                   </div>
                 </div>
@@ -410,7 +412,7 @@ export default function AgentsView() {
                 {/* Tools Selection Section */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-default-500">
-                    Gán MCP Tools hỗ trợ
+                    {t("agents.editor.mcpTools")}
                   </h3>
                   <div className="max-h-[220px] overflow-y-auto border border-default-200 rounded-lg p-3 space-y-2.5 bg-default-50">
                     {tools.map((tool) => {
@@ -445,7 +447,7 @@ export default function AgentsView() {
                               {tool.toolName}
                             </p>
                             <p className="text-[10px] text-default-400 truncate max-w-[280px]">
-                              {tool.description || "Không có mô tả"} (
+                              {tool.description || t("agents.editor.noDesc")} (
                               {tool.integration.name})
                             </p>
                           </div>
@@ -454,7 +456,7 @@ export default function AgentsView() {
                     })}
                     {tools.length === 0 && (
                       <p className="text-xs text-default-400 italic text-center py-4">
-                        Chưa có MCP tools nào khả dụng.
+                        {t("agents.editor.noMcpTools")}
                       </p>
                     )}
                   </div>
@@ -469,14 +471,14 @@ export default function AgentsView() {
                 variant="ghost"
                 onClick={resetForm}
               >
-                Hủy bỏ
+                {t("agents.editor.cancel")}
               </Button>
               <Button
                 className="cursor-pointer font-bold"
                 type="submit"
                 variant="primary"
               >
-                Lưu cấu hình
+                {t("agents.editor.save")}
               </Button>
             </div>
           </form>
@@ -517,7 +519,7 @@ export default function AgentsView() {
                     className={`inline-block h-2 w-2 rounded-full ${agent.isActive ? "bg-emerald-400 animate-pulse" : "bg-default-300"}`}
                   />
                   <span className="text-xs text-default-450">
-                    {agent.isActive ? "Active" : "Inactive"}
+                    {agent.isActive ? t("agents.list.active") : t("agents.list.inactive")}
                   </span>
                 </div>
               </div>
@@ -548,7 +550,7 @@ export default function AgentsView() {
                   ))}
                   {(!agent.skills || agent.skills.length === 0) && (
                     <span className="text-[10px] text-default-400 italic">
-                      Không có skills.
+                      {t("agents.list.noSkills")}
                     </span>
                   )}
                 </div>
@@ -575,7 +577,7 @@ export default function AgentsView() {
                   )}
                   {(!agent.toolBindings || agent.toolBindings.length === 0) && (
                     <span className="text-[10px] text-default-400 italic">
-                      Chưa được gán tools.
+                      {t("agents.list.noTools")}
                     </span>
                   )}
                 </div>
@@ -591,7 +593,7 @@ export default function AgentsView() {
                 onClick={() => handleEdit(agent)}
               >
                 <Edit2 className="h-3.5 w-3.5" />
-                Sửa
+                {t("agents.list.edit")}
               </Button>
               <Button
                 className="cursor-pointer"
@@ -600,7 +602,7 @@ export default function AgentsView() {
                 onClick={() => handleDelete(agent.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Xóa
+                {t("agents.list.delete")}
               </Button>
             </div>
           </Card>
@@ -610,7 +612,7 @@ export default function AgentsView() {
           <div className="col-span-full py-12 flex flex-col items-center justify-center gap-3 border border-dashed border-default-200 rounded-xl bg-default-100/20">
             <Bot className="h-10 w-10 text-default-400" />
             <p className="text-default-500 text-sm">
-              Chưa có Agent nào được khởi tạo.
+              {t("agents.list.noAgents")}
             </p>
             <Button
               size="sm"
@@ -618,7 +620,7 @@ export default function AgentsView() {
               onClick={() => setIsEditing(true)}
             >
               <Plus className="h-4 w-4" />
-              Tạo Agent
+              {t("agents.create")}
             </Button>
           </div>
         )}

@@ -26,6 +26,7 @@ import {
   TextField,
   Label,
 } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
@@ -47,6 +48,7 @@ interface User {
 }
 
 export function UsersView() {
+  const t = useTranslations();
   const [users, setUsers] = React.useState<User[]>([]);
   const [roles, setRoles] = React.useState<Role[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -78,12 +80,12 @@ export function UsersView() {
       }
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Không thể tải danh sách tài khoản",
+        err.response?.data?.message || t("users.alert.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, [selectedRole]);
+  }, [selectedRole, t]);
 
   React.useEffect(() => {
     loadData();
@@ -96,7 +98,7 @@ export function UsersView() {
       });
       loadData();
     } catch (err: any) {
-      alert("Cập nhật trạng thái người dùng thất bại");
+      alert(t("users.alert.updateStatusFailed"));
     }
   };
 
@@ -107,7 +109,7 @@ export function UsersView() {
       });
       loadData();
     } catch (err: any) {
-      alert("Cập nhật vai trò thất bại");
+      alert(t("users.alert.updateRoleFailed"));
     }
   };
 
@@ -123,7 +125,7 @@ export function UsersView() {
       setNewPattern("");
       loadData();
     } catch (err: any) {
-      alert("Cập nhật quyền hạn thất bại");
+      alert(t("users.alert.updatePermFailed"));
     }
   };
 
@@ -138,7 +140,7 @@ export function UsersView() {
       });
       loadData();
     } catch (err: any) {
-      alert("Xóa quyền hạn lỗi");
+      alert(t("users.alert.deletePermFailed"));
     }
   };
 
@@ -147,7 +149,7 @@ export function UsersView() {
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
         <span className="text-default-500 text-sm">
-          Đang tải dữ liệu phân quyền...
+          {t("users.loading")}
         </span>
       </div>
     );
@@ -159,11 +161,10 @@ export function UsersView() {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Users className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
-          Phân quyền Matrix & Vai trò
+          {t("users.title")}
         </h1>
         <p className="text-sm text-default-500">
-          Quản lý người dùng, thay đổi vai trò và thiết lập ma trận phân quyền
-          chạy tools bằng regex/wildcard.
+          {t("users.subtitle")}
         </p>
       </div>
 
@@ -179,26 +180,26 @@ export function UsersView() {
         <Card className="lg:col-span-2 bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <Users className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
-            Danh sách Người dùng
+            {t("users.list.title")}
           </h2>
 
           <div className="overflow-x-auto">
-            <Table aria-label="Bảng người dùng" className="w-full">
+            <Table aria-label={t("users.list.tableAriaLabel")} className="w-full">
               <TableHeader>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  HỌ VÀ TÊN
+                  {t("users.list.colName")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  EMAIL
+                  {t("users.list.colEmail")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold">
-                  VAI TRÒ
+                  {t("users.list.colRole")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-center">
-                  TRẠNG THÁI
+                  {t("users.list.colStatus")}
                 </TableColumn>
                 <TableColumn className="bg-default-100 text-foreground font-bold text-right">
-                  HÀNH ĐỘNG
+                  {t("users.list.colActions")}
                 </TableColumn>
               </TableHeader>
               <TableBody>
@@ -234,7 +235,7 @@ export function UsersView() {
                             : "bg-red-500/10 text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {u.isActive ? "Hoạt động" : "Bị khóa"}
+                        {u.isActive ? t("users.list.statusActive") : t("users.list.statusLocked")}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -249,7 +250,7 @@ export function UsersView() {
                         ) : (
                           <UserCheck className="h-3.5 w-3.5" />
                         )}
-                        {u.isActive ? "Khóa" : "Kích hoạt"}
+                        {u.isActive ? t("users.list.lock") : t("users.list.unlock")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -264,17 +265,17 @@ export function UsersView() {
           <div className="space-y-1">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-purple-500 dark:text-purple-400" />
-              Tool Permission Matrix
+              {t("users.matrix.title")}
             </h2>
             <p className="text-[10px] text-default-450">
-              Phân quyền chi tiết chạy công cụ của Specialist Agents.
+              {t("users.matrix.subtitle")}
             </p>
           </div>
 
           {/* Select Role Selector */}
           <div>
-            <span className="text-xs font-semibold text-default-550 block mb-1">
-              Cấu hình cho Vai trò:
+            <span className="text-xs font-semibold text-default-555 block mb-1">
+              {t("users.matrix.roleConfig")}
             </span>
             <select
               className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 rounded-lg p-2 text-sm focus:outline-none"
@@ -296,7 +297,7 @@ export function UsersView() {
           {/* List existing permissions patterns */}
           <div className="space-y-2 pt-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">
-              Quy tắc hiện tại:
+              {t("users.matrix.currentRules")}
             </span>
             <div className="space-y-2 max-h-[200px] overflow-y-auto border border-default-200 p-2.5 rounded-lg bg-default-50">
               {selectedRole?.toolPermissions?.map((perm) => (
@@ -325,7 +326,7 @@ export function UsersView() {
               {(!selectedRole?.toolPermissions ||
                 selectedRole.toolPermissions.length === 0) && (
                 <p className="text-xs text-default-400 italic text-center py-4">
-                  Chưa cấu hình quy tắc nào (Cho phép mặc định).
+                  {t("users.matrix.emptyRules")}
                 </p>
               )}
             </div>
@@ -337,15 +338,15 @@ export function UsersView() {
             onSubmit={handleAddPermission}
           >
             <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">
-              Thêm quy tắc mới
+              {t("users.matrix.newRule")}
             </span>
             <TextField isRequired className="w-full" name="toolPattern">
               <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                Mẫu công cụ (Tool Pattern / Wildcard)
+                {t("users.matrix.pattern")}
               </Label>
               <Input
                 className="text-foreground"
-                placeholder="e.g. git:* hoặc leave:get_leave_days"
+                placeholder={t("users.matrix.patternPlaceholder")}
                 value={newPattern}
                 onChange={(e) => setNewPattern(e.target.value)}
               />
@@ -353,20 +354,20 @@ export function UsersView() {
             <div className="flex items-center justify-between pt-1">
               <div>
                 <span className="text-xs font-semibold text-default-500 block mb-1">
-                  Cho phép chạy?
+                  {t("users.matrix.allowed")}
                 </span>
                 <select
                   className="bg-default-100 text-foreground border border-default-200 focus:border-primary rounded px-2.5 py-1 text-xs focus:outline-none"
                   value={newAllowed ? "true" : "false"}
                   onChange={(e) => setNewAllowed(e.target.value === "true")}
                 >
-                  <option value="true">Cho phép (Allow)</option>
-                  <option value="false">Từ chối (Deny)</option>
+                  <option value="true">{t("users.matrix.allow")}</option>
+                  <option value="false">{t("users.matrix.deny")}</option>
                 </select>
               </div>
               <Button size="sm" type="submit" variant="primary">
                 <Plus className="h-3.5 w-3.5" />
-                Thêm Quy tắc
+                {t("users.matrix.addBtn")}
               </Button>
             </div>
           </form>

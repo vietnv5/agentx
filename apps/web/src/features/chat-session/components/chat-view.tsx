@@ -16,6 +16,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Card, Button, Spinner } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { chatService } from "@/src/features/chat-session/services/chat.service";
 import { useChatStream } from "@/src/features/chat-session/hooks/useChatStream";
@@ -36,6 +37,7 @@ interface Conversation {
 }
 
 export default function ChatView() {
+  const t = useTranslations();
   const [conversations, setConversations] = React.useState<Conversation[]>([]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [messages, setMessages] = React.useState<Message[]>([]);
@@ -78,11 +80,11 @@ export default function ChatView() {
         setActiveId(data[0].id);
       }
     } catch (err) {
-      console.error("Không tải được danh sách hội thoại", err);
+      console.error(t("chat.alert.loadHistoryFailed"), err);
     } finally {
       setLoadingConv(false);
     }
-  }, []);
+  }, [t]);
 
   const loadMessages = React.useCallback(
     async (id: string) => {
@@ -107,12 +109,12 @@ export default function ChatView() {
           });
         }
       } catch (err) {
-        console.error("Không tải được tin nhắn", err);
+        console.error(t("chat.alert.loadMessagesFailed"), err);
       } finally {
         setLoadingMsgs(false);
       }
     },
-    [setPendingApproval],
+    [setPendingApproval, t],
   );
 
   React.useEffect(() => {
@@ -131,25 +133,25 @@ export default function ChatView() {
   const handleCreateConv = async () => {
     try {
       const data = await chatService.createConversation(
-        `Cuộc hội thoại #${conversations.length + 1}`,
+        t("chat.history.tempTitle", { index: conversations.length + 1 }),
       );
 
       await loadConversations();
       setActiveId(data.id);
     } catch (err) {
-      alert("Tạo hội thoại mới lỗi");
+      alert(t("chat.alert.createFailed"));
     }
   };
 
   const handleDeleteConv = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Bạn có muốn xóa cuộc hội thoại này?")) return;
+    if (!confirm(t("chat.confirm.delete"))) return;
     try {
       await chatService.deleteConversation(id);
       if (activeId === id) setActiveId(null);
       loadConversations();
     } catch (err) {
-      alert("Xóa hội thoại lỗi");
+      alert(t("chat.alert.deleteFailed"));
     }
   };
 
@@ -202,7 +204,7 @@ export default function ChatView() {
         <div className="p-4 border-b border-default-200/60 flex items-center justify-between">
           <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
             <MessageSquare className="h-4.5 w-4.5 text-emerald-500 dark:text-emerald-400" />
-            Lịch sử Hội thoại
+            {t("chat.history.title")}
           </span>
           <Button
             isIconOnly
@@ -256,7 +258,7 @@ export default function ChatView() {
           )}
           {conversations.length === 0 && !loadingConv && (
             <p className="text-center text-xs text-default-450 italic py-8">
-              Chưa có cuộc hội thoại nào.
+              {t("chat.history.empty")}
             </p>
           )}
         </div>
@@ -270,10 +272,10 @@ export default function ChatView() {
             <Bot className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
             <div>
               <h2 className="text-sm font-bold text-foreground">
-                AgentX Playground
+                {t("chat.header.title")}
               </h2>
               <p className="text-[10px] text-default-500">
-                ReAct Loop, SSE Streaming & Human-in-the-loop approvals.
+                {t("chat.header.subtitle")}
               </p>
             </div>
           </div>
@@ -281,7 +283,7 @@ export default function ChatView() {
             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
               <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                Routed: {routedAgentName}
+                {t("chat.header.routed", { name: routedAgentName })}
               </span>
             </div>
           )}
@@ -335,9 +337,9 @@ export default function ChatView() {
                       {msg.metadata?.toolCalls && (
                         <div className="mt-2 w-full max-w-lg">
                           <Card className="bg-default-50 border border-default-200 p-3 rounded-lg space-y-2">
-                            <span className="text-[10px] font-bold uppercase text-default-450 tracking-wider flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase text-default-455 tracking-wider flex items-center gap-1.5">
                               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-                              Hoạt động MCP Tool
+                              {t("chat.mcp.activity")}
                             </span>
                             {msg.metadata.toolCalls.map(
                               (tCall: any, idx: number) => (
@@ -346,14 +348,10 @@ export default function ChatView() {
                                   className="bg-default-100 p-2.5 rounded border border-default-200 font-mono text-[10px] text-default-500 space-y-1"
                                 >
                                   <p className="text-foreground font-semibold">
-                                    Called:{" "}
-                                    {tCall.toolName || tCall.function?.name}
+                                    {t("chat.mcp.called", { name: tCall.toolName || tCall.function?.name })}
                                   </p>
                                   <p className="text-default-450">
-                                    Args:{" "}
-                                    {JSON.stringify(
-                                      tCall.args || tCall.function?.arguments,
-                                    )}
+                                    {t("chat.mcp.args", { args: JSON.stringify(tCall.args || tCall.function?.arguments) })}
                                   </p>
                                 </div>
                               ),
@@ -392,7 +390,7 @@ export default function ChatView() {
                           >
                             <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                               <Clock className="h-4 w-4 text-emerald-500 dark:text-emerald-400 animate-pulse" />
-                              Đang chạy ReAct loop...
+                              {t("chat.loop.running")}
                             </span>
                             {showToolLogs ? (
                               <ChevronUp className="h-4 w-4" />
@@ -403,17 +401,17 @@ export default function ChatView() {
 
                           {showToolLogs && (
                             <div className="space-y-2 pt-1">
-                              {completedTools.map((t, idx) => (
+                              {completedTools.map((tCall, idx) => (
                                 <div
                                   key={idx}
                                   className="flex items-center gap-2 text-xs"
                                 >
                                   <CheckCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                                   <span className="text-default-750 font-mono font-semibold">
-                                    {t.toolName}
+                                    {tCall.toolName}
                                   </span>
                                   <span className="text-[10px] text-default-400">
-                                    (success)
+                                    {t("chat.loop.success")}
                                   </span>
                                 </div>
                               ))}
@@ -428,7 +426,7 @@ export default function ChatView() {
                                     {runningTool.toolName}
                                   </span>
                                   <span className="text-[10px] text-default-400">
-                                    (running)
+                                    {t("chat.loop.runningState")}
                                   </span>
                                 </div>
                               )}
@@ -459,18 +457,17 @@ export default function ChatView() {
                       <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-455 shrink-0 mt-0.5" />
                       <div className="text-xs">
                         <span className="font-bold text-foreground">
-                          Yêu cầu Phê duyệt chạy Công cụ (Approval Gate)
+                          {t("chat.approval.title")}
                         </span>
                         <p className="text-default-500 mt-1 leading-relaxed">
                           {pendingApproval.description}
                         </p>
                         <div className="mt-3 bg-default-100 p-3 rounded-lg overflow-x-auto text-[10px] font-mono border border-default-200">
                           <p className="text-amber-600 dark:text-amber-400 font-semibold mb-1">
-                            Tool: {pendingApproval.toolName}
+                            {t("chat.approval.tool", { name: pendingApproval.toolName })}
                           </p>
-                          <p className="text-default-450">
-                            Args:{" "}
-                            {JSON.stringify(pendingApproval.args, null, 2)}
+                          <p className="text-default-455">
+                            {t("chat.approval.args", { args: JSON.stringify(pendingApproval.args, null, 2) })}
                           </p>
                         </div>
                       </div>
@@ -483,7 +480,7 @@ export default function ChatView() {
                         variant="danger"
                         onClick={() => handleDecideApproval(false)}
                       >
-                        Từ chối (Reject)
+                        {t("chat.approval.reject")}
                       </Button>
                       <Button
                         className="cursor-pointer font-bold"
@@ -491,7 +488,7 @@ export default function ChatView() {
                         variant="primary"
                         onClick={() => handleDecideApproval(true)}
                       >
-                        Cho phép (Approve)
+                        {t("chat.approval.approve")}
                       </Button>
                     </div>
                   </Card>
@@ -503,10 +500,10 @@ export default function ChatView() {
               <MessageSquare className="h-10 w-10 text-default-300" />
               <div>
                 <p className="text-sm font-semibold text-default-500">
-                  Không có cuộc hội thoại nào đang mở
+                  {t("chat.empty.title")}
                 </p>
                 <p className="text-xs text-default-400 mt-0.5">
-                  Bấm nút cộng (+) ở sidebar bên trái để khởi tạo hội thoại mới.
+                  {t("chat.empty.subtitle")}
                 </p>
               </div>
             </div>
@@ -522,7 +519,7 @@ export default function ChatView() {
                 className="flex-1 bg-default-100 text-foreground border border-default-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 disabled:opacity-50"
                 disabled={isStreaming}
                 placeholder={
-                  isStreaming ? "AgentX đang xử lý..." : "Nhập tin nhắn..."
+                  isStreaming ? t("chat.input.processing") : t("chat.input.placeholder")
                 }
                 type="text"
                 value={input}
