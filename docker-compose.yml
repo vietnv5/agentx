@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agentx-postgres-dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: agentx_user
+      POSTGRES_PASSWORD: agentx_secure_password
+      POSTGRES_DB: agentx_db
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    networks:
+      - agentx-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentx-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata-dev:/data
+    networks:
+      - agentx-network
+    restart: unless-stopped
+
+volumes:
+  pgdata-dev:
+  redisdata-dev:
+
+networks:
+  agentx-network:
+    driver: bridge

@@ -1,28 +1,20 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Next.js + HeroUI",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "AgentX Platform",
+  description: "Hệ thống quản lý và vận hành đa Agent thông minh",
   navItems: [
     {
-      label: "Home",
+      label: "Trang chủ",
       href: "/",
     },
     {
-      label: "Docs",
-      href: "/docs",
+      label: "Chat Playground",
+      href: "/chat",
     },
     {
-      label: "Pricing",
-      href: "/pricing",
-    },
-    {
-      label: "Blog",
-      href: "/blog",
-    },
-    {
-      label: "About",
-      href: "/about",
+      label: "Quản trị",
+      href: "/admin",
     },
   ],
   navMenuItems: [
@@ -60,10 +52,7 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/heroui-inc/heroui",
-    twitter: "https://twitter.com/hero_ui",
+    github: "https://github.com/vietnv5/agentx",
     docs: "https://heroui.com",
-    discord: "https://discord.gg/9b6yyZKmH4",
-    sponsor: "https://patreon.com/jrgarciadev",
   },
 };

@@ -8,10 +8,7 @@ import clsx from "clsx";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import {
-  TwitterIcon,
   GithubIcon,
-  DiscordIcon,
-  HeartFilledIcon,
   SearchIcon,
   Logo,
 } from "@/components/icons";
@@ -42,7 +39,7 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           <NextLink className="flex items-center gap-1" href="/">
             <Logo />
-            <p className="font-bold text-inherit">ACME</p>
+            <p className="font-bold text-inherit">AgentX</p>
           </NextLink>
           <ul className="hidden lg:flex gap-4 ml-2">
             {siteConfig.navItems.map((item) => (
@@ -63,22 +60,6 @@ export const Navbar = () => {
 
         <div className="hidden sm:flex items-center gap-2">
           <Link
-            aria-label="Twitter"
-            href={siteConfig.links.twitter}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <TwitterIcon className="text-muted" />
-          </Link>
-          <Link
-            aria-label="Discord"
-            href={siteConfig.links.discord}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <DiscordIcon className="text-muted" />
-          </Link>
-          <Link
             aria-label="Github"
             href={siteConfig.links.github}
             rel="noopener noreferrer"
@@ -88,16 +69,12 @@ export const Navbar = () => {
           </Link>
           <ThemeSwitch />
           <div className="hidden lg:flex">{searchInput}</div>
-          <div className="hidden md:flex">
-            <Button
-              className="text-sm font-normal"
-              variant="tertiary"
-              onPress={() => window.open(siteConfig.links.sponsor, "_blank")}
-            >
-              <HeartFilledIcon className="text-danger" />
-              Sponsor
-            </Button>
-          </div>
+          <Link
+            href="/login"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+          >
+            Đăng nhập
+          </Link>
         </div>
 
         <div className="flex sm:hidden items-center gap-2">
@@ -110,6 +87,12 @@ export const Navbar = () => {
             <GithubIcon className="text-muted" />
           </Link>
           <ThemeSwitch />
+          <Link
+            href="/login"
+            className="text-xs font-semibold px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors mr-1"
+          >
+            Đăng nhập
+          </Link>
           <button
             aria-expanded={isMenuOpen}
             aria-label="Toggle menu"

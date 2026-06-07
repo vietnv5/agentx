@@ -96,19 +96,18 @@ POST /api/auth/login
 **Response (200):**
 ```json
 {
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "uuid",
-      "email": "admin@agentx.local",
-      "name": "System Administrator",
-      "role": "ADMIN"
-    }
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid",
+    "email": "admin@agentx.local",
+    "name": "System Administrator",
+    "role": "ADMIN"
   }
 }
 ```
 
-**Side effect:** Set `refreshToken` as HTTP-Only cookie.
+**Side effect:** Gán `refreshToken` vào HTTP-Only Cookie làm fallback tùy chọn (phục vụ cho trường hợp Single Sign-On chéo subdomain như `erp.companyX.com` và `agentx-chat.companyX.com`).
 
 **Errors:** 401 — Invalid credentials.
 
@@ -120,24 +119,25 @@ POST /api/auth/login
 POST /api/auth/refresh
 ```
 
-**Request:** No body. Refresh token auto-sent via HTTP-Only cookie.
+**Request:** 
+*   **Body (Tùy chọn)**: `{ "refreshToken": "..." }`
+*   **Headers (Tùy chọn)**: `Authorization: Bearer <refreshToken>` hoặc `x-refresh-token: <refreshToken>`
+*   **Cookie (Fallback)**: Refresh token tự động gửi qua cookie nếu có.
 
 **Response (200):**
 ```json
 {
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "uuid",
-      "email": "admin@agentx.local",
-      "name": "System Administrator",
-      "role": "ADMIN"
-    }
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid",
+    "email": "admin@agentx.local",
+    "name": "System Administrator",
+    "role": "ADMIN"
   }
 }
 ```
 
-**Errors:** 401 — Refresh token expired or revoked.
+**Errors:** 401 — Refresh token expired, invalid or revoked.
 
 ---
 
@@ -147,16 +147,24 @@ POST /api/auth/refresh
 POST /api/auth/logout
 ```
 
-**Headers:** `Authorization: Bearer <access_token>`
+**Headers:** `Authorization: Bearer <access_token>` (accessToken của người dùng hiện tại)
+
+**Request Body (Tùy chọn):**
+```json
+{
+  "refreshToken": "..."
+}
+```
+*(Hoặc truyền refresh token qua header `x-refresh-token`).*
 
 **Response (200):**
 ```json
 {
-  "data": { "message": "Logged out successfully" }
+  "message": "Logged out successfully"
 }
 ```
 
-**Side effect:** Revoke refresh token in DB, clear cookie.
+**Side effect:** Thu hồi Refresh Token trong Database và xóa Cookie refresh token.
 
 ---
 

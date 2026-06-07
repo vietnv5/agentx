@@ -184,47 +184,73 @@ export class AuthService {
 }
 ```
 
-### 1.5 Cookie Configuration
+### 1.5 Refresh Token Management & Fallback Cookie
 
+Để tránh lỗi CORS chéo domain (`strict-origin-when-cross-origin`) khi triển khai frontend và backend ở các domain khác nhau, hệ thống hỗ trợ truyền nhận Refresh Token qua cả JSON Response Body và Header Bearer. Trình duyệt/frontend sẽ chủ động lưu trữ Refresh Token tại LocalStorage.
+
+Đồng thời, hệ thống vẫn duy trì ghi HTTP-Only cookie làm **fallback dự phòng** để phục vụ các trường hợp tích hợp với các hệ thống khác muốn sign-on 1 lần (Single Sign-On) cho các hệ thống khác nhau (ví dụ như trường hợp chéo subdomain: erp.companyX.com và agentx-chat.companyX.com):
 ```typescript
-// Khi trả refresh token, set HTTP-Only cookie:
-response.cookie('refreshToken', refreshToken, {
+// Khi trả refresh token tại POST /api/auth/login:
+res.cookie('refreshToken', refreshToken, {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',  // HTTPS only in prod
-  sameSite: 'strict',
-  path: '/api/auth/refresh',                        // Chỉ gửi cookie cho endpoint refresh
-  maxAge: 7 * 24 * 60 * 60 * 1000,                 // 7 days
+  sameSite: 'lax',                                 // Dùng lax để tăng độ linh hoạt
+  path: '/api/auth/refresh',                       // Chỉ gửi cookie cho endpoint refresh
+  maxAge: 7 * 24 * 60 * 60 * 1000,                // 7 days
 });
 ```
 
-### 1.6 Frontend Token Management
+### 1.6 Frontend Token Management (Zustand & LocalStorage)
+
+Frontend lưu trữ thông tin Access Token và Refresh Token trong store Zustand được cấu hình đồng bộ hóa với LocalStorage (Zustand Persist) để duy trì trạng thái đăng nhập sau khi F5 trang:
 
 ```typescript
-// src/features/auth/auth-store.ts
+// apps/web/src/features/auth/auth-store.ts
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface AuthState {
   accessToken: string | null;
+  refreshToken: string | null;
   user: User | null;
-  setAuth: (accessToken: string, user: User) => void;
+  isAuthenticated: boolean;
+  setAuth: (accessToken: string, refreshToken: string, user: User) => void;
   clearAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  user: null,
-  setAuth: (accessToken, user) => set({ accessToken, user }),
-  clearAuth: () => set({ accessToken: null, user: null }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
+      setAuth: (accessToken, refreshToken, user) => 
+        set({ accessToken, refreshToken, user, isAuthenticated: true }),
+      clearAuth: () => 
+        set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false }),
+    }),
+    {
+      name: 'agentx-auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken 
+      }),
+    },
+  ),
+);
 ```
 
 ```typescript
-// src/lib/api-client.ts — Axios interceptor cho auto-refresh
+// apps/web/src/lib/api-client.ts — Axios interceptor cho auto-refresh
 import axios from 'axios';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,  // Gửi cookie kèm request
+  withCredentials: false,  // Tắt Cookie CORS mặc định
 });
 
 // Response interceptor: auto refresh on 401
@@ -237,13 +263,18 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        const refreshToken = useAuthStore.getState().refreshToken;
         const { data } = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
-          {},
-          { withCredentials: true },
+          { refreshToken },
+          { 
+            headers: {
+              Authorization: `Bearer ${refreshToken}`
+            }
+          },
         );
 
-        useAuthStore.getState().setAuth(data.accessToken, data.user);
+        useAuthStore.getState().setAuth(data.accessToken, data.refreshToken || refreshToken || '', data.user);
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(originalRequest);
       } catch {
