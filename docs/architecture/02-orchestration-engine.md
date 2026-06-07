@@ -35,6 +35,7 @@ Router Agent là điểm chạm đầu tiên khi nhận được tin nhắn từ
 Có 2 cơ chế định tuyến được hỗ trợ:
 1. **Rule-based Router**: Dựa trên các từ khóa (keywords) và cụm từ đặc trưng được Admin định nghĩa thủ công trong cấu hình của từng agent (nhanh, chi phí 0).
 2. **LLM-based Router**: Gọi một mô hình LLM nhỏ, giá rẻ (như Claude Haiku) để phân loại mục đích câu hỏi của người dùng và gán nhãn Agent đích (độ chính xác cao, hiểu ngữ cảnh phức tạp).
+3. **Default / Fallback Agent (Khi không rõ domain)**: Trong trường hợp ý định của người dùng không thuộc bất kỳ domain chuyên biệt nào (HR, Finance, CRM...) hoặc câu hỏi mơ hồ, Router Agent sẽ tự động định tuyến cuộc hội thoại đến **General / Fallback Agent** (Agent mặc định) để trả lời chung hoặc yêu cầu người dùng làm rõ câu hỏi.
 
 ### 1.2 Specialist (Sub) Agents
 Các Agent chuyên trách được cấu hình riêng biệt về:

@@ -181,20 +181,25 @@ flowchart TD
     ROUTER -->|"báo cáo, chi phí, kế toán"| FIN["💰 Finance Agent<br/>(ERP Finance Module)"]
     ROUTER -->|"khách hàng, cơ hội, deal"| CRM["🤝 CRM Agent<br/>(CRM System)"]
     ROUTER -->|"ticket, sự cố, hỗ trợ"| IT["🖥️ IT Helpdesk Agent<br/>(Ticketing System)"]
-    ROUTER -->|"không rõ domain"| FALLBACK["❓ Fallback<br/>(Ask for clarification)"]
+    ROUTER -->|"không rõ domain"| GEN["👤 General / Fallback Agent<br/>(Default Router fallback)"]
 
     HR --> LOOP["Agent Loop<br/>(ReAct)"]
     FIN --> LOOP
     CRM --> LOOP
     IT --> LOOP
+    GEN --> LOOP
 
     style ROUTER fill:#2d3436,stroke:#fdcb6e,color:#fff
     style HR fill:#1e3a5f,stroke:#74b9ff,color:#fff
     style FIN fill:#1e5f3a,stroke:#55efc4,color:#fff
     style CRM fill:#5f1e3a,stroke:#fd79a8,color:#fff
     style IT fill:#3a1e5f,stroke:#a29bfe,color:#fff
+    style GEN fill:#2d3a3a,stroke:#00b894,color:#fff
     style LOOP fill:#2d3436,stroke:#ff6b6b,color:#fff
 ```
+
+**Cơ chế xử lý khi không rõ domain (Fallback / Default Agent)**:
+Khi Router Agent không phân loại được ý định của người dùng vào bất kỳ domain chuyên biệt nào (HR, Finance, CRM...) hoặc ý định trong câu hỏi không rõ ràng, hệ thống sẽ tự động định tuyến cuộc hội thoại đến **General / Fallback Agent** (Tác tử mặc định) để phản hồi chung hoặc hỏi lại người dùng nhằm làm rõ yêu cầu. Tác tử mặc định này cũng chạy vòng lặp ReAct độc lập với các công cụ/tri thức chung được gán sẵn.
 
 #### 2.2 Agent Loop (ReAct per Subagent)
 
@@ -619,15 +624,15 @@ graph TB
 
 | # | Document | Status | Nội dung |
 |---|----------|--------|---------|
-| 0 | [00-admin-control-panel.md](./00-admin-control-panel.md) | 🔲 Planned | UI/UX Admin Panel, Agent builder, Integration manager, RBAC config |
-| 1 | [01-user-interface.md](./01-user-interface.md) | 🔲 Planned | Chat UI design, streaming implementation, embedded widget |
+| 0 | [00-admin-control-panel.md](./00-admin-control-panel.md) | ✅ Completed | UI/UX Admin Panel, Agent builder, Integration manager, RBAC config |
+| 1 | [01-user-interface.md](./01-user-interface.md) | ✅ Completed | Chat UI design, streaming implementation, embedded widget |
 | 2 | [02-orchestration-engine.md](./02-orchestration-engine.md) | ✅ Completed | Router Agent design, Subagent pool, ReAct loop implementation, Prompt Builder |
-| 3 | [03-memory-context.md](./03-memory-context.md) | 🔲 Planned | Conversation memory, RAG pipeline, token budget algorithm |
+| 3 | [03-memory-context.md](./03-memory-context.md) | ✅ Completed | Conversation memory, RAG pipeline, token budget algorithm |
 | 4 | [04-llm-core.md](./04-llm-core.md) | ✅ Completed | LLM provider abstraction, dynamic platform-level resolution, tiers, overrides, cost metering |
 | 5 | [05-integration-layer.md](./05-integration-layer.md) | ✅ Completed | MCP integration, Action Validator, Tool Registry, Binary/Multipart uploads |
-| 6 | [06-infrastructure.md](./06-infrastructure.md) | 🔲 Planned | DB schema (full), migration, caching patterns, deployment configs |
-| 7 | [07-security.md](./07-security.md) | 🔲 Planned | Auth flows, RBAC, API security, action audit trail, data isolation |
-| 8 | [08-api-reference.md](./08-api-reference.md) | 🔲 Planned | REST API endpoints, WebSocket events, Admin API, Integration API |
+| 6 | [06-infrastructure.md](./06-infrastructure.md) | ✅ Completed | DB schema (full), migration, caching patterns, deployment configs |
+| 7 | [07-security.md](./07-security.md) | ✅ Completed | Auth flows, RBAC, API security, action audit trail, data isolation |
+| 8 | [08-api-reference.md](./08-api-reference.md) | ✅ Completed | REST API endpoints, WebSocket events, Admin API, Integration API |
 
 ---
 
