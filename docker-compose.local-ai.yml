@@ -30,8 +30,25 @@ services:
     networks:
       - agentx-network
 
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: agentx-open-webui
+    ports:
+      - "3080:8080"
+    volumes:
+      - open-webui_data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=agentx_super_secret_key_for_webui
+    depends_on:
+      - ollama
+    networks:
+      - agentx-network
+    restart: unless-stopped
+
 volumes:
   ollama_data:
+  open-webui_data:
 
 networks:
   agentx-network:

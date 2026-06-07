@@ -72,6 +72,7 @@ export function useChatStream() {
             try {
               const eventWrapper = JSON.parse(cleanLine.slice(5).trim());
               const { event, data } = eventWrapper;
+              console.log("[useChatStream] Parsed SSE event:", event, "data:", data);
 
               if (event === "agent_routing") {
                 setRoutedAgentName(data.agentName);
