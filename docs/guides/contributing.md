@@ -252,6 +252,9 @@ features/new-feature/
 │   └── NewFeatureForm.tsx
 ├── hooks/
 │   └── useNewFeature.ts
+├── i18n/
+│   ├── vi.json
+│   └── en.json
 ├── services/
 │   └── new-feature-api.ts
 └── types/
@@ -275,7 +278,39 @@ features/chat-session/components/ → import from '../agent-admin/components/'
 - **Backend**: Import Module → inject Service qua DI
 - **Frontend**: Đưa component/hook ra `src/components/` hoặc `src/hooks/`
 
+### 5.4 Quy tắc Đa ngôn ngữ (i18n)
+
+Để hỗ trợ đa ngôn ngữ cho các features mới, hãy tuân thủ các quy tắc sau:
+
+1. **Quản lý bản dịch độc lập (Feature Isolation)**:
+   Mỗi feature module tự quản lý các tệp tin dịch của riêng mình trong thư mục `i18n/`:
+   ```
+   features/new-feature/i18n/
+   ├── vi.json
+   └── en.json
+   ```
+2. **Định dạng khóa phẳng (Flat Keys)**:
+   Các tệp tin JSON phải sử dụng các key ở định dạng phẳng sử dụng ký tự chấm (dot-notation), ví dụ:
+   ```json
+   {
+     "newFeature.title": "Tính năng mới",
+     "newFeature.button.create": "Tạo mới"
+   }
+   ```
+   *Lưu ý: Không khai báo cấu trúc lồng nhau (nested objects) trực tiếp trong các tệp JSON i18n. Trình tải dịch của hệ thống sẽ tự động unflatten các key phẳng thành dạng lồng nhau ở runtime.*
+
+3. **Đăng ký Feature**:
+   Sau khi tạo thư mục `i18n/` và các tệp tin dịch tương ứng, bắt buộc phải đăng ký tên feature trong mảng `FEATURES` tại tệp tin [getMessages.ts](file:///d:/GitHub/AI%20agent/agentx/apps/web/src/i18n/loaders/getMessages.ts) để trình tải i18n tự động phát hiện và merge bản dịch:
+   ```typescript
+   const FEATURES = ["auth", "agent-admin", "chat-session", "new-feature"];
+   ```
+
+4. **Sử dụng i18n trong Code**:
+   - Sử dụng hook `useTranslations` từ thư viện `next-intl` để lấy chuỗi dịch.
+   - Các từ khóa dùng chung cho toàn bộ dự án (ví dụ: tên ứng dụng, nút "Lưu", nút "Hủy", thông báo lỗi kết nối...) phải được đặt tại thư mục dùng chung [apps/web/src/i18n/common/](file:///d:/GitHub/AI%20agent/agentx/apps/web/src/i18n/common/) thay vì lặp lại ở các feature.
+
 ---
+
 
 ## 6. Database Changes
 

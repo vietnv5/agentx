@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   TrendingUp,
   Cpu,
@@ -12,6 +11,8 @@ import {
   Zap,
 } from "lucide-react";
 import { Card, Button, Spinner } from "@heroui/react";
+
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
 interface Stats {
   overall: {
@@ -40,6 +41,7 @@ export default function OverviewView() {
       setLoading(true);
       setError(null);
       const data = await adminService.getOverviewStats();
+
       setStats(data);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải số liệu thống kê");
@@ -56,7 +58,9 @@ export default function OverviewView() {
     return (
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
-        <span className="text-default-500 text-sm">Đang tải dữ liệu dashboard...</span>
+        <span className="text-default-500 text-sm">
+          Đang tải dữ liệu dashboard...
+        </span>
       </div>
     );
   }
@@ -66,8 +70,14 @@ export default function OverviewView() {
       <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-background px-4 text-center">
         <AlertTriangle className="h-12 w-12 text-red-500" />
         <h2 className="text-xl font-bold text-foreground">Lỗi tải dữ liệu</h2>
-        <p className="text-default-500 max-w-md">{error || "Có lỗi xảy ra khi kết nối tới máy chủ."}</p>
-        <Button variant="primary" onClick={fetchStats} className="cursor-pointer">
+        <p className="text-default-500 max-w-md">
+          {error || "Có lỗi xảy ra khi kết nối tới máy chủ."}
+        </p>
+        <Button
+          className="cursor-pointer"
+          variant="primary"
+          onClick={fetchStats}
+        >
           Thử lại
         </Button>
       </div>
@@ -81,7 +91,8 @@ export default function OverviewView() {
   const errorExecs = toolExecutions.error ?? 0;
   const deniedExecs = toolExecutions.denied ?? 0;
   const totalExecs = successExecs + errorExecs + deniedExecs;
-  const errorRate = totalExecs > 0 ? ((errorExecs / totalExecs) * 100).toFixed(1) : "0.0";
+  const errorRate =
+    totalExecs > 0 ? ((errorExecs / totalExecs) * 100).toFixed(1) : "0.0";
 
   // Vẽ SVG Line/Bar Chart đơn giản cho costOverTime
   const maxCost = Math.max(...costOverTime.map((d) => d.cost), 0.01);
@@ -91,6 +102,7 @@ export default function OverviewView() {
     .map((d, index) => {
       const x = (index / (costOverTime.length - 1 || 1)) * chartWidth;
       const y = chartHeight - (d.cost / maxCost) * chartHeight;
+
       return `${x},${y}`;
     })
     .join(" ");
@@ -100,13 +112,17 @@ export default function OverviewView() {
       {/* Header */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Hệ thống Điều khiển AgentX</h1>
-          <p className="text-sm text-default-500">Giám sát hiệu năng đa agent, chi phí API và công cụ MCP.</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            Hệ thống Điều khiển AgentX
+          </h1>
+          <p className="text-sm text-default-500">
+            Giám sát hiệu năng đa agent, chi phí API và công cụ MCP.
+          </p>
         </div>
         <Button
+          className="cursor-pointer border border-default-200"
           variant="ghost"
           onClick={fetchStats}
-          className="cursor-pointer border border-default-200"
         >
           <RefreshCw className="h-4 w-4" />
           Làm mới
@@ -118,48 +134,74 @@ export default function OverviewView() {
         {/* Card 1 */}
         <Card className="bg-content1 border border-default-150 p-5 rounded-xl space-y-2">
           <div className="flex items-center justify-between text-default-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Chi phí 24h</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Chi phí 24h
+            </span>
             <DollarSign className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-foreground">${past24h.totalCost.toFixed(4)}</div>
+          <div className="text-2xl font-bold text-foreground">
+            ${past24h.totalCost.toFixed(4)}
+          </div>
           <p className="text-xs text-default-400">
-            Tổng cộng: <span className="text-default-600 font-semibold">${overall.totalCost.toFixed(4)}</span>
+            Tổng cộng:{" "}
+            <span className="text-default-600 font-semibold">
+              ${overall.totalCost.toFixed(4)}
+            </span>
           </p>
         </Card>
 
         {/* Card 2 */}
         <Card className="bg-content1 border border-default-150 p-5 rounded-xl space-y-2">
           <div className="flex items-center justify-between text-default-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Độ trễ trung bình</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Độ trễ trung bình
+            </span>
             <Activity className="h-5 w-5 text-sky-500 dark:text-sky-400" />
           </div>
-          <div className="text-2xl font-bold text-foreground">{overall.avgLatencyMs} ms</div>
+          <div className="text-2xl font-bold text-foreground">
+            {overall.avgLatencyMs} ms
+          </div>
           <p className="text-xs text-default-400">
-            Tổng số yêu cầu: <span className="text-default-600 font-semibold">{overall.requestCount}</span>
+            Tổng số yêu cầu:{" "}
+            <span className="text-default-600 font-semibold">
+              {overall.requestCount}
+            </span>
           </p>
         </Card>
 
         {/* Card 3 */}
         <Card className="bg-content1 border border-default-150 p-5 rounded-xl space-y-2">
           <div className="flex items-center justify-between text-default-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tỷ lệ lỗi Tool</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Tỷ lệ lỗi Tool
+            </span>
             <AlertTriangle className="h-5 w-5 text-amber-500" />
           </div>
           <div className="text-2xl font-bold text-foreground">{errorRate}%</div>
           <p className="text-xs text-default-400">
-            Tổng gọi tool: <span className="text-default-600 font-semibold">{totalExecs} lần</span>
+            Tổng gọi tool:{" "}
+            <span className="text-default-600 font-semibold">
+              {totalExecs} lần
+            </span>
           </p>
         </Card>
 
         {/* Card 4 */}
         <Card className="bg-content1 border border-default-150 p-5 rounded-xl space-y-2">
           <div className="flex items-center justify-between text-default-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tổng tài nguyên</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Tổng tài nguyên
+            </span>
             <Cpu className="h-5 w-5 text-purple-500 dark:text-purple-400" />
           </div>
-          <div className="text-2xl font-bold text-foreground">{overall.agentCount} Agents</div>
+          <div className="text-2xl font-bold text-foreground">
+            {overall.agentCount} Agents
+          </div>
           <p className="text-xs text-default-400">
-            Kết nối MCP: <span className="text-default-600 font-semibold">{overall.integrationCount} server</span>
+            Kết nối MCP:{" "}
+            <span className="text-default-600 font-semibold">
+              {overall.integrationCount} server
+            </span>
           </p>
         </Card>
       </div>
@@ -180,15 +222,44 @@ export default function OverviewView() {
             <div className="space-y-4">
               {/* SVG Line Chart */}
               <div className="relative h-[180px] w-full">
-                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-full w-full overflow-visible">
+                <svg
+                  className="h-full w-full overflow-visible"
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                >
                   {/* Grid Lines */}
-                  <line x1="0" y1="0" x2={chartWidth} y2="0" stroke="currentColor" className="text-default-100" strokeWidth="1" strokeDasharray="4" />
-                  <line x1="0" y1={chartHeight / 2} x2={chartWidth} y2={chartHeight / 2} stroke="currentColor" className="text-default-100" strokeWidth="1" strokeDasharray="4" />
-                  <line x1="0" y1={chartHeight} x2={chartWidth} y2={chartHeight} stroke="currentColor" className="text-default-200" strokeWidth="1" />
+                  <line
+                    className="text-default-100"
+                    stroke="currentColor"
+                    strokeDasharray="4"
+                    strokeWidth="1"
+                    x1="0"
+                    x2={chartWidth}
+                    y1="0"
+                    y2="0"
+                  />
+                  <line
+                    className="text-default-100"
+                    stroke="currentColor"
+                    strokeDasharray="4"
+                    strokeWidth="1"
+                    x1="0"
+                    x2={chartWidth}
+                    y1={chartHeight / 2}
+                    y2={chartHeight / 2}
+                  />
+                  <line
+                    className="text-default-200"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    x1="0"
+                    x2={chartWidth}
+                    y1={chartHeight}
+                    y2={chartHeight}
+                  />
 
                   {/* Gradient Area under line */}
                   <defs>
-                    <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">
                       <stop offset="0%" stopColor="#10B981" stopOpacity="0.2" />
                       <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
                     </linearGradient>
@@ -199,19 +270,25 @@ export default function OverviewView() {
                   />
 
                   {/* Price Line */}
-                  <polyline fill="none" stroke="#10B981" strokeWidth="2.5" points={points} />
+                  <polyline
+                    fill="none"
+                    points={points}
+                    stroke="#10B981"
+                    strokeWidth="2.5"
+                  />
 
                   {/* Interactive Circles on vertices */}
                   {costOverTime.map((d, i) => {
                     const x = (i / (costOverTime.length - 1 || 1)) * chartWidth;
                     const y = chartHeight - (d.cost / maxCost) * chartHeight;
+
                     return (
                       <circle
                         key={i}
+                        className="fill-emerald-400 stroke-background stroke-2 hover:r-6 cursor-pointer transition-all"
                         cx={x}
                         cy={y}
                         r="4"
-                        className="fill-emerald-400 stroke-background stroke-2 hover:r-6 cursor-pointer transition-all"
                       />
                     );
                   })}
@@ -243,13 +320,17 @@ export default function OverviewView() {
             {/* Success Bar */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs font-semibold">
-                <span className="text-emerald-600 dark:text-emerald-400">Thành công</span>
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  Thành công
+                </span>
                 <span className="text-default-500">{successExecs} lần</span>
               </div>
               <div className="h-2 w-full rounded-full bg-default-100 overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: `${totalExecs > 0 ? (successExecs / totalExecs) * 100 : 0}%` }}
+                  style={{
+                    width: `${totalExecs > 0 ? (successExecs / totalExecs) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -257,13 +338,17 @@ export default function OverviewView() {
             {/* Error Bar */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs font-semibold">
-                <span className="text-red-500 dark:text-red-400">Lỗi thực thi</span>
+                <span className="text-red-500 dark:text-red-400">
+                  Lỗi thực thi
+                </span>
                 <span className="text-default-500">{errorExecs} lần</span>
               </div>
               <div className="h-2 w-full rounded-full bg-default-100 overflow-hidden">
                 <div
                   className="h-full bg-red-500 rounded-full"
-                  style={{ width: `${totalExecs > 0 ? (errorExecs / totalExecs) * 100 : 0}%` }}
+                  style={{
+                    width: `${totalExecs > 0 ? (errorExecs / totalExecs) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -277,13 +362,16 @@ export default function OverviewView() {
               <div className="h-2 w-full rounded-full bg-default-100 overflow-hidden">
                 <div
                   className="h-full bg-amber-500 rounded-full"
-                  style={{ width: `${totalExecs > 0 ? (deniedExecs / totalExecs) * 100 : 0}%` }}
+                  style={{
+                    width: `${totalExecs > 0 ? (deniedExecs / totalExecs) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
 
             <div className="text-[10px] text-default-400 leading-relaxed pt-2">
-              * Tỷ lệ lỗi được ghi nhận dựa trên các hoạt động gọi công cụ tự động của specialist agents trong ReAct loop.
+              * Tỷ lệ lỗi được ghi nhận dựa trên các hoạt động gọi công cụ tự
+              động của specialist agents trong ReAct loop.
             </div>
           </div>
         </Card>

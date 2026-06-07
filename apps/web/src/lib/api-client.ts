@@ -1,8 +1,9 @@
-import axios from 'axios';
-import { useAuthStore } from '../features/auth/auth-store';
+import axios from "axios";
+
+import { useAuthStore } from "../features/auth/auth-store";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   withCredentials: true, // Gửi/nhận cookie HttpOnly (refreshToken) từ API server
 });
 
@@ -10,9 +11,11 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const accessToken = useAuthStore.getState().accessToken;
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -39,7 +42,10 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+      if (
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/refresh")
+      ) {
         return Promise.reject(error);
       }
 
@@ -49,6 +55,7 @@ apiClient.interceptors.response.use(
         })
           .then((token) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
+
             return apiClient(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -60,7 +67,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = useAuthStore.getState().refreshToken;
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/refresh`,
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/refresh`,
           { refreshToken },
           {
             headers: {
@@ -69,24 +76,29 @@ apiClient.interceptors.response.use(
           },
         );
 
-        const { accessToken, refreshToken: newRefreshToken, user } = response.data;
-        useAuthStore.getState().setAuth(
+        const {
           accessToken,
-          newRefreshToken || refreshToken || '',
+          refreshToken: newRefreshToken,
           user,
-        );
+        } = response.data;
+
+        useAuthStore
+          .getState()
+          .setAuth(accessToken, newRefreshToken || refreshToken || "", user);
 
         apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
         processQueue(null, accessToken);
+
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
         useAuthStore.getState().clearAuth();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
         }
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

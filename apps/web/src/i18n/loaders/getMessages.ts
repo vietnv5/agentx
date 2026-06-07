@@ -3,12 +3,15 @@ import type { Locale } from "../config";
 // Helper chuyển đổi flat object với keys dạng "a.b.c" thành nested object {a: {b: {c: value}}}
 function unflatten(data: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};
+
   for (const key in data) {
     if (Object.prototype.hasOwnProperty.call(data, key)) {
       const parts = key.split(".");
       let current = result;
+
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
+
         if (i === parts.length - 1) {
           current[part] = data[key];
         } else {
@@ -18,6 +21,7 @@ function unflatten(data: Record<string, any>): Record<string, any> {
       }
     }
   }
+
   return result;
 }
 
@@ -30,7 +34,8 @@ const FEATURES = ["auth", "agent-admin", "chat-session"];
  */
 export async function getMessages(locale: Locale) {
   // Load common translations
-  const commonRaw = (await import(`../common/${locale}.json`)).default as Record<string, any>;
+  const commonRaw = (await import(`../common/${locale}.json`))
+    .default as Record<string, any>;
   let mergedRaw = { ...commonRaw };
 
   // Tự động quét và gộp tất cả các feature translations có sẵn
@@ -39,6 +44,7 @@ export async function getMessages(locale: Locale) {
       const featureRaw = (
         await import(`../../features/${feature}/i18n/${locale}.json`)
       ).default as Record<string, any>;
+
       mergedRaw = { ...mergedRaw, ...featureRaw };
     } catch {
       // Bỏ qua nếu feature chưa có file dịch

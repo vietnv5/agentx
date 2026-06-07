@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Kbd, Link, TextField, InputGroup } from "@heroui/react";
+import { Kbd, Link, TextField, InputGroup } from "@heroui/react";
 import NextLink from "next/link";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  GithubIcon,
-  SearchIcon,
-  Logo,
-} from "@/components/icons";
+import { GithubIcon, SearchIcon, Logo } from "@/components/icons";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,8 +66,8 @@ export const Navbar = () => {
           <ThemeSwitch />
           <div className="hidden lg:flex">{searchInput}</div>
           <Link
-            href="/login"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+            href="/login"
           >
             Đăng nhập
           </Link>
@@ -88,8 +84,8 @@ export const Navbar = () => {
           </Link>
           <ThemeSwitch />
           <Link
-            href="/login"
             className="text-xs font-semibold px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors mr-1"
+            href="/login"
           >
             Đăng nhập
           </Link>

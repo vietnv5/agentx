@@ -6,6 +6,7 @@ export const authService = {
    */
   async login(payload: Record<string, any>) {
     const response = await apiClient.post("/api/auth/login", payload);
+
     return response.data;
   },
 

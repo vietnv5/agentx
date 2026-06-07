@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { useAuthStore } from "@/src/features/auth/auth-store";
 
 export interface ToolLog {
@@ -18,11 +19,14 @@ export interface PendingApproval {
 export function useChatStream() {
   const { accessToken } = useAuthStore.getState();
   const [isStreaming, setIsStreaming] = React.useState(false);
-  const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(null);
+  const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(
+    null,
+  );
   const [streamingText, setStreamingText] = React.useState("");
   const [runningTool, setRunningTool] = React.useState<ToolLog | null>(null);
   const [completedTools, setCompletedTools] = React.useState<ToolLog[]>([]);
-  const [pendingApproval, setPendingApproval] = React.useState<PendingApproval | null>(null);
+  const [pendingApproval, setPendingApproval] =
+    React.useState<PendingApproval | null>(null);
 
   // Đọc SSE Stream bằng Fetch Reader để đính kèm Token Auth
   const readStream = async (url: string, onComplete?: () => Promise<void>) => {
@@ -41,6 +45,7 @@ export function useChatStream() {
       });
 
       const reader = response.body?.getReader();
+
       if (!reader) {
         throw new Error("Không thể khởi tạo luồng đọc.");
       }
@@ -50,14 +55,17 @@ export function useChatStream() {
 
       while (true) {
         const { value, done } = await reader.read();
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
+
         buffer = lines.pop() || "";
 
         for (const line of lines) {
           const cleanLine = line.trim();
+
           if (cleanLine.startsWith("data:")) {
             try {
               const eventWrapper = JSON.parse(cleanLine.slice(5).trim());
@@ -68,7 +76,11 @@ export function useChatStream() {
               } else if (event === "token") {
                 setStreamingText((prev) => prev + data);
               } else if (event === "tool_start") {
-                setRunningTool({ toolName: data.toolName, args: data.args, status: "pending" });
+                setRunningTool({
+                  toolName: data.toolName,
+                  args: data.args,
+                  status: "pending",
+                });
               } else if (event === "tool_end") {
                 setRunningTool(null);
                 setCompletedTools((prev) => [
@@ -108,10 +120,15 @@ export function useChatStream() {
     }
   };
 
-  const sendMessage = async (activeId: string, content: string, onComplete?: () => Promise<void>) => {
+  const sendMessage = async (
+    activeId: string,
+    content: string,
+    onComplete?: () => Promise<void>,
+  ) => {
     const url = `${
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
     }/api/chat/conversations/${activeId}/messages/stream?content=${encodeURIComponent(content)}`;
+
     await readStream(url, onComplete);
   };
 
@@ -124,6 +141,7 @@ export function useChatStream() {
     const url = `${
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
     }/api/chat/conversations/${activeId}/approval/${approvalId}/decide/stream?approved=${approved}`;
+
     await readStream(url, onComplete);
   };
 

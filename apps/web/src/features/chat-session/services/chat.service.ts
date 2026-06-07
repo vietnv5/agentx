@@ -6,6 +6,7 @@ export const chatService = {
    */
   async getConversations() {
     const response = await apiClient.get("/api/chat/conversations");
+
     return response.data;
   },
 
@@ -14,6 +15,7 @@ export const chatService = {
    */
   async getConversationMessages(id: string) {
     const response = await apiClient.get(`/api/chat/conversations/${id}`);
+
     return response.data;
   },
 
@@ -21,7 +23,10 @@ export const chatService = {
    * Lấy danh sách yêu cầu phê duyệt (approvals) đang chờ của cuộc hội thoại
    */
   async getConversationApprovals(id: string) {
-    const response = await apiClient.get(`/api/chat/conversations/${id}/approvals`);
+    const response = await apiClient.get(
+      `/api/chat/conversations/${id}/approvals`,
+    );
+
     return response.data;
   },
 
@@ -30,6 +35,7 @@ export const chatService = {
    */
   async createConversation(title: string) {
     const response = await apiClient.post("/api/chat/conversations", { title });
+
     return response.data;
   },
 
@@ -38,6 +44,7 @@ export const chatService = {
    */
   async deleteConversation(id: string) {
     const response = await apiClient.delete(`/api/chat/conversations/${id}`);
+
     return response.data;
   },
 };

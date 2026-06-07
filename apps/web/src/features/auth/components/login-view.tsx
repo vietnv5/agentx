@@ -1,11 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, InputGroup, TextField, Label, Button, Form } from "@heroui/react";
+import {
+  Card,
+  InputGroup,
+  TextField,
+  Label,
+  Button,
+  Form,
+} from "@heroui/react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Bot } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
+
 import { authService } from "@/src/features/auth/services/auth.service";
 import { useAuthStore } from "@/src/features/auth/auth-store";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -43,6 +51,7 @@ export default function LoginView() {
       });
 
       const { accessToken, refreshToken, user: authUser } = data;
+
       setAuth(accessToken, refreshToken, authUser);
 
       // Chuyển hướng người dùng dựa vào vai trò
@@ -92,12 +101,16 @@ export default function LoginView() {
         {/* Card Form */}
         <Card className="backdrop-blur-md bg-content1/70 border border-default-200/80 shadow-2xl p-2 rounded-2xl">
           <Card.Header className="flex flex-col items-start px-6 pt-6 pb-2">
-            <h2 className="text-xl font-bold text-foreground">{t("login.title")}</h2>
-            <p className="text-xs text-default-500 mt-1">{t("login.subtitle")}</p>
+            <h2 className="text-xl font-bold text-foreground">
+              {t("login.title")}
+            </h2>
+            <p className="text-xs text-default-500 mt-1">
+              {t("login.subtitle")}
+            </p>
           </Card.Header>
 
           <Card.Content className="px-6 py-4">
-            <Form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               {errorMessage && (
                 <div className="p-3 text-xs text-red-500 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl w-full animate-pulse">
                   {errorMessage}
@@ -113,11 +126,11 @@ export default function LoginView() {
                     <Mail className="w-4 h-4" />
                   </InputGroup.Prefix>
                   <InputGroup.Input
+                    className="w-full text-foreground text-sm placeholder:text-default-400 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                     placeholder={t("login.email.placeholder")}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full text-foreground text-sm placeholder:text-default-400 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                   />
                 </InputGroup>
               </TextField>
@@ -131,14 +144,18 @@ export default function LoginView() {
                     <Lock className="w-4 h-4" />
                   </InputGroup.Prefix>
                   <InputGroup.Input
+                    className="w-full text-foreground text-sm placeholder:text-default-400 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                     placeholder={t("login.password.placeholder")}
                     type={isVisible ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full text-foreground text-sm placeholder:text-default-400 bg-transparent outline-none border-none focus:outline-none focus:ring-0"
                   />
                   <InputGroup.Suffix className="flex items-center">
-                    <button className="focus:outline-none" type="button" onClick={toggleVisibility}>
+                    <button
+                      className="focus:outline-none"
+                      type="button"
+                      onClick={toggleVisibility}
+                    >
                       {isVisible ? (
                         <EyeOff className="w-4 h-4 text-default-400" />
                       ) : (
@@ -150,9 +167,9 @@ export default function LoginView() {
               </TextField>
 
               <Button
-                type="submit"
                 className="w-full font-medium text-black bg-gradient-to-r from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 py-6 rounded-xl mt-2 transition-all duration-300 hover:opacity-95 flex items-center justify-center gap-2 cursor-pointer"
                 isDisabled={isLoading}
+                type="submit"
               >
                 {isLoading ? t("login.submitting") : t("login.submit")}
                 {!isLoading && <ArrowRight className="w-4 h-4" />}

@@ -16,3 +16,11 @@ trigger: always_on
 - **Compact Spacing (Data-Dense)**: Avoid generic, overly large margins and paddings (`p-6`, `gap-6`). Tighten spaces using HeroUI's smaller utility scales (`p-3`, `gap-2`, `min-h-0`) to ensure maximum visible content above the fold.
 - **Visual Clutter Control**: Replace heavy borders and solid divider lines with subtle background shading (`bg-default-50`) or precise HeroUI shadow tokens to separate sections without eating up screen real estate.
 - **Dynamic Collapse**: Use responsive/collapsible components (e.g., Accordion, Dropdown, Tabs, or scrollable horizontal carousels for mobile) to hide secondary data until requested by the user.
+
+## 3. Internationalization (i18n) Rules for Features
+- **Feature Isolation for Translations**: Each frontend feature module must manage its own translations inside a `features/<feature-name>/i18n/` directory with locale JSON files (e.g., `vi.json` and `en.json`).
+- **Feature Registration**: Any new feature containing translation files must be registered in the `FEATURES` array in [getMessages.ts](file:///d:/GitHub/AI%20agent/agentx/apps/web/src/i18n/loaders/getMessages.ts) to enable automatic loading and merging.
+- **Flat Keys Convention**: Translation JSON files must use flat dot-separated notation keys (e.g., `"login.title": "Đăng nhập"`), which are unflattened automatically at runtime. Avoid nested objects inside translation JSON files.
+- **Hook Usage**: Always import and use `useTranslations` from `next-intl` to resolve localized strings in Client Components. Avoid hardcoded user-facing text in components.
+- **Common Translations**: Put general, globally shared keys (such as app name, common action buttons, connection errors) in the global [common/](file:///d:/GitHub/AI%20agent/agentx/apps/web/src/i18n/common/) directory instead of repeating them in feature-specific directories.
+

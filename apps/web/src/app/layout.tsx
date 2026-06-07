@@ -5,8 +5,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
 import { Providers } from "./providers";
-import { LayoutWrapper } from "@/components/layout-wrapper";
 
+import { LayoutWrapper } from "@/components/layout-wrapper";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 
@@ -54,4 +54,3 @@ export default async function RootLayout({
     </html>
   );
 }
-

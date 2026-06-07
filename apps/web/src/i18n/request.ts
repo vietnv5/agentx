@@ -1,5 +1,6 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
+
 import { defaultLocale, locales, type Locale } from "./config";
 import { getMessages } from "./loaders/getMessages";
 
@@ -18,7 +19,11 @@ export default getRequestConfig(async () => {
   const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value;
 
   // 2. Accept-Language header (first segment, e.g. "vi-VN" → "vi")
-  const acceptLang = headerStore.get("accept-language")?.split(",")[0]?.split("-")[0]?.trim();
+  const acceptLang = headerStore
+    .get("accept-language")
+    ?.split(",")[0]
+    ?.split("-")[0]
+    ?.trim();
 
   const resolved = [cookieLocale, acceptLang].find(
     (l): l is Locale => !!l && (locales as readonly string[]).includes(l),

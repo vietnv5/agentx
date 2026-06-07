@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface User {
   id: string;
@@ -7,7 +7,7 @@ export interface User {
   name: string;
   role: {
     id: string;
-    name: 'ADMIN' | 'STAFF';
+    name: "ADMIN" | "STAFF";
     description?: string;
   };
   isActive: boolean;
@@ -33,10 +33,15 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (accessToken, refreshToken, user) =>
         set({ accessToken, refreshToken, user, isAuthenticated: true }),
       clearAuth: () =>
-        set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false }),
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        }),
     }),
     {
-      name: 'agentx-auth-storage',
+      name: "agentx-auth-storage",
       storage: createJSONStorage(() => localStorage),
       // Đồng bộ hóa toàn bộ trạng thái auth vào localStorage để duy trì trạng thái khi không dùng cookie
       partialize: (state) => ({

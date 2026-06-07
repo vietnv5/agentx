@@ -6,6 +6,7 @@ export const adminService = {
    */
   async getOverviewStats() {
     const response = await apiClient.get("/api/admin/audit/stats");
+
     return response.data;
   },
 
@@ -14,6 +15,7 @@ export const adminService = {
    */
   async getAgents() {
     const response = await apiClient.get("/api/admin/agents");
+
     return response.data;
   },
 
@@ -22,6 +24,7 @@ export const adminService = {
    */
   async createAgent(payload: Record<string, any>) {
     const response = await apiClient.post("/api/admin/agents", payload);
+
     return response.data;
   },
 
@@ -30,6 +33,7 @@ export const adminService = {
    */
   async updateAgent(id: string, payload: Record<string, any>) {
     const response = await apiClient.patch(`/api/admin/agents/${id}`, payload);
+
     return response.data;
   },
 
@@ -38,6 +42,7 @@ export const adminService = {
    */
   async deleteAgent(id: string) {
     const response = await apiClient.delete(`/api/admin/agents/${id}`);
+
     return response.data;
   },
 
@@ -46,6 +51,7 @@ export const adminService = {
    */
   async getTools() {
     const response = await apiClient.get("/api/admin/integrations/tools");
+
     return response.data;
   },
 
@@ -54,6 +60,7 @@ export const adminService = {
    */
   async getIntegrations() {
     const response = await apiClient.get("/api/admin/integrations");
+
     return response.data;
   },
 
@@ -62,6 +69,7 @@ export const adminService = {
    */
   async createIntegration(payload: Record<string, any>) {
     const response = await apiClient.post("/api/admin/integrations", payload);
+
     return response.data;
   },
 
@@ -69,7 +77,11 @@ export const adminService = {
    * Cập nhật cấu hình MCP Server
    */
   async updateIntegration(id: string, payload: Record<string, any>) {
-    const response = await apiClient.patch(`/api/admin/integrations/${id}`, payload);
+    const response = await apiClient.patch(
+      `/api/admin/integrations/${id}`,
+      payload,
+    );
+
     return response.data;
   },
 
@@ -78,6 +90,7 @@ export const adminService = {
    */
   async deleteIntegration(id: string) {
     const response = await apiClient.delete(`/api/admin/integrations/${id}`);
+
     return response.data;
   },
 
@@ -86,6 +99,7 @@ export const adminService = {
    */
   async testIntegration(id: string) {
     const response = await apiClient.post(`/api/admin/integrations/${id}/test`);
+
     return response.data;
   },
 
@@ -94,6 +108,7 @@ export const adminService = {
    */
   async syncIntegration(id: string) {
     const response = await apiClient.post(`/api/admin/integrations/${id}/sync`);
+
     return response.data;
   },
 
@@ -101,9 +116,13 @@ export const adminService = {
    * Bật/Tắt chế độ yêu cầu phê duyệt khi chạy tool
    */
   async toggleToolApproval(toolId: string, requiresApproval: boolean) {
-    const response = await apiClient.patch(`/api/admin/integrations/tools/${toolId}/approval`, {
-      requiresApproval,
-    });
+    const response = await apiClient.patch(
+      `/api/admin/integrations/tools/${toolId}/approval`,
+      {
+        requiresApproval,
+      },
+    );
+
     return response.data;
   },
 
@@ -112,6 +131,7 @@ export const adminService = {
    */
   async getUsers() {
     const response = await apiClient.get("/api/admin/users");
+
     return response.data;
   },
 
@@ -120,6 +140,7 @@ export const adminService = {
    */
   async getRoles() {
     const response = await apiClient.get("/api/admin/users/roles");
+
     return response.data;
   },
 
@@ -127,15 +148,26 @@ export const adminService = {
    * Cập nhật thông tin User (roleId, isActive...)
    */
   async updateUser(userId: string, payload: Record<string, any>) {
-    const response = await apiClient.patch(`/api/admin/users/${userId}`, payload);
+    const response = await apiClient.patch(
+      `/api/admin/users/${userId}`,
+      payload,
+    );
+
     return response.data;
   },
 
   /**
    * Thêm/Cập nhật quy tắc phân quyền cho một vai trò
    */
-  async updateRolePermissions(roleId: string, payload: { toolPattern: string; allowed: boolean }) {
-    const response = await apiClient.post(`/api/admin/users/roles/${roleId}/permissions`, payload);
+  async updateRolePermissions(
+    roleId: string,
+    payload: { toolPattern: string; allowed: boolean },
+  ) {
+    const response = await apiClient.post(
+      `/api/admin/users/roles/${roleId}/permissions`,
+      payload,
+    );
+
     return response.data;
   },
 
@@ -144,14 +176,24 @@ export const adminService = {
    */
   async getKnowledge() {
     const response = await apiClient.get("/api/admin/knowledge/documents");
+
     return response.data;
   },
 
   /**
    * Tải tài liệu tri thức lên (upload & indexing)
    */
-  async uploadKnowledge(payload: { title: string; content: string; sourceType: string; filename: string }) {
-    const response = await apiClient.post("/api/admin/knowledge/upload", payload);
+  async uploadKnowledge(payload: {
+    title: string;
+    content: string;
+    sourceType: string;
+    filename: string;
+  }) {
+    const response = await apiClient.post(
+      "/api/admin/knowledge/upload",
+      payload,
+    );
+
     return response.data;
   },
 
@@ -159,7 +201,10 @@ export const adminService = {
    * Xóa tài liệu tri thức
    */
   async deleteKnowledge(id: string) {
-    const response = await apiClient.delete(`/api/admin/knowledge/documents/${id}`);
+    const response = await apiClient.delete(
+      `/api/admin/knowledge/documents/${id}`,
+    );
+
     return response.data;
   },
 
@@ -167,7 +212,11 @@ export const adminService = {
    * Tìm kiếm tương đồng trên cơ sở tri thức (Semantic Search Sandbox)
    */
   async searchKnowledge(payload: { query: string; limit: number }) {
-    const response = await apiClient.post("/api/admin/knowledge/search", payload);
+    const response = await apiClient.post(
+      "/api/admin/knowledge/search",
+      payload,
+    );
+
     return response.data;
   },
 
@@ -176,6 +225,7 @@ export const adminService = {
    */
   async getAuditLogs() {
     const response = await apiClient.get("/api/admin/audit");
+
     return response.data;
   },
 
@@ -183,7 +233,10 @@ export const adminService = {
    * Lấy danh sách logs gọi công cụ (tools logs)
    */
   async getToolsAuditLogs(limit = 50) {
-    const response = await apiClient.get(`/api/admin/audit/tools?limit=${limit}`);
+    const response = await apiClient.get(
+      `/api/admin/audit/tools?limit=${limit}`,
+    );
+
     return response.data;
   },
 
@@ -191,7 +244,10 @@ export const adminService = {
    * Lấy danh sách logs sử dụng LLM Token
    */
   async getLlmUsageLogs(limit = 50) {
-    const response = await apiClient.get(`/api/admin/audit/usage?limit=${limit}`);
+    const response = await apiClient.get(
+      `/api/admin/audit/usage?limit=${limit}`,
+    );
+
     return response.data;
   },
 };

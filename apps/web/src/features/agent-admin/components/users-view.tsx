@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   Users,
   Shield,
@@ -27,6 +26,8 @@ import {
   TextField,
   Label,
 } from "@heroui/react";
+
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 
 interface Role {
   id: string;
@@ -64,6 +65,7 @@ export function UsersView() {
         adminService.getUsers(),
         adminService.getRoles(),
       ]);
+
       setUsers(usersData);
       setRoles(rolesData);
       // Select the first role by default for matrix config
@@ -71,10 +73,13 @@ export function UsersView() {
         setSelectedRole(rolesData[0]);
       } else if (selectedRole) {
         const updated = rolesData.find((r: Role) => r.id === selectedRole.id);
+
         setSelectedRole(updated || rolesData[0]);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Không thể tải danh sách tài khoản");
+      setError(
+        err.response?.data?.message || "Không thể tải danh sách tài khoản",
+      );
     } finally {
       setLoading(false);
     }
@@ -141,7 +146,9 @@ export function UsersView() {
     return (
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
         <Spinner color="success" size="lg" />
-        <span className="text-default-500 text-sm">Đang tải dữ liệu phân quyền...</span>
+        <span className="text-default-500 text-sm">
+          Đang tải dữ liệu phân quyền...
+        </span>
       </div>
     );
   }
@@ -154,7 +161,10 @@ export function UsersView() {
           <Users className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
           Phân quyền Matrix & Vai trò
         </h1>
-        <p className="text-sm text-default-500">Quản lý người dùng, thay đổi vai trò và thiết lập ma trận phân quyền chạy tools bằng regex/wildcard.</p>
+        <p className="text-sm text-default-500">
+          Quản lý người dùng, thay đổi vai trò và thiết lập ma trận phân quyền
+          chạy tools bằng regex/wildcard.
+        </p>
       </div>
 
       {error && (
@@ -175,22 +185,39 @@ export function UsersView() {
           <div className="overflow-x-auto">
             <Table aria-label="Bảng người dùng" className="w-full">
               <TableHeader>
-                <TableColumn className="bg-default-100 text-foreground font-bold">HỌ VÀ TÊN</TableColumn>
-                <TableColumn className="bg-default-100 text-foreground font-bold">EMAIL</TableColumn>
-                <TableColumn className="bg-default-100 text-foreground font-bold">VAI TRÒ</TableColumn>
-                <TableColumn className="bg-default-100 text-foreground font-bold text-center">TRẠNG THÁI</TableColumn>
-                <TableColumn className="bg-default-100 text-foreground font-bold text-right">HÀNH ĐỘNG</TableColumn>
+                <TableColumn className="bg-default-100 text-foreground font-bold">
+                  HỌ VÀ TÊN
+                </TableColumn>
+                <TableColumn className="bg-default-100 text-foreground font-bold">
+                  EMAIL
+                </TableColumn>
+                <TableColumn className="bg-default-100 text-foreground font-bold">
+                  VAI TRÒ
+                </TableColumn>
+                <TableColumn className="bg-default-100 text-foreground font-bold text-center">
+                  TRẠNG THÁI
+                </TableColumn>
+                <TableColumn className="bg-default-100 text-foreground font-bold text-right">
+                  HÀNH ĐỘNG
+                </TableColumn>
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow key={u.id} className="border-b border-default-100 hover:bg-default-50/50">
-                    <TableCell className="text-foreground font-semibold">{u.name}</TableCell>
-                    <TableCell className="text-default-550">{u.email}</TableCell>
+                  <TableRow
+                    key={u.id}
+                    className="border-b border-default-100 hover:bg-default-50/50"
+                  >
+                    <TableCell className="text-foreground font-semibold">
+                      {u.name}
+                    </TableCell>
+                    <TableCell className="text-default-550">
+                      {u.email}
+                    </TableCell>
                     <TableCell className="text-default-600">
                       <select
+                        className="bg-default-100 text-foreground border border-default-250 rounded px-2 py-1 text-xs focus:outline-none focus:border-primary"
                         value={u.role.id}
                         onChange={(e) => handleChangeRole(u, e.target.value)}
-                        className="bg-default-100 text-foreground border border-default-250 rounded px-2 py-1 text-xs focus:outline-none focus:border-primary"
                       >
                         {roles.map((r) => (
                           <option key={r.id} value={r.id}>
@@ -200,20 +227,28 @@ export function UsersView() {
                       </select>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold ${
-                        u.isActive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold ${
+                          u.isActive
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-red-500/10 text-red-600 dark:text-red-400"
+                        }`}
+                      >
                         {u.isActive ? "Hoạt động" : "Bị khóa"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
+                        className="cursor-pointer"
                         size="sm"
                         variant={u.isActive ? "danger" : "primary"}
                         onClick={() => handleToggleActive(u)}
-                        className="cursor-pointer"
                       >
-                        {u.isActive ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+                        {u.isActive ? (
+                          <UserX className="h-3.5 w-3.5" />
+                        ) : (
+                          <UserCheck className="h-3.5 w-3.5" />
+                        )}
                         {u.isActive ? "Khóa" : "Kích hoạt"}
                       </Button>
                     </TableCell>
@@ -231,19 +266,24 @@ export function UsersView() {
               <Shield className="h-5 w-5 text-purple-500 dark:text-purple-400" />
               Tool Permission Matrix
             </h2>
-            <p className="text-[10px] text-default-450">Phân quyền chi tiết chạy công cụ của Specialist Agents.</p>
+            <p className="text-[10px] text-default-450">
+              Phân quyền chi tiết chạy công cụ của Specialist Agents.
+            </p>
           </div>
 
           {/* Select Role Selector */}
           <div>
-            <label className="text-xs font-semibold text-default-550 block mb-1">Cấu hình cho Vai trò:</label>
+            <span className="text-xs font-semibold text-default-550 block mb-1">
+              Cấu hình cho Vai trò:
+            </span>
             <select
+              className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 rounded-lg p-2 text-sm focus:outline-none"
               value={selectedRole?.id || ""}
               onChange={(e) => {
                 const found = roles.find((r) => r.id === e.target.value);
+
                 if (found) setSelectedRole(found);
               }}
-              className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 rounded-lg p-2 text-sm focus:outline-none"
             >
               {roles.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -255,7 +295,9 @@ export function UsersView() {
 
           {/* List existing permissions patterns */}
           <div className="space-y-2 pt-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">Quy tắc hiện tại:</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">
+              Quy tắc hiện tại:
+            </span>
             <div className="space-y-2 max-h-[200px] overflow-y-auto border border-default-200 p-2.5 rounded-lg bg-default-50">
               {selectedRole?.toolPermissions?.map((perm) => (
                 <div
@@ -268,47 +310,61 @@ export function UsersView() {
                     ) : (
                       <Lock className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
                     )}
-                    <span className="font-mono text-foreground font-semibold">{perm.toolPattern}</span>
+                    <span className="font-mono text-foreground font-semibold">
+                      {perm.toolPattern}
+                    </span>
                   </div>
                   <button
-                    onClick={() => handleDeletePermission(perm.toolPattern)}
                     className="text-default-400 hover:text-red-500 transition-colors cursor-pointer"
+                    onClick={() => handleDeletePermission(perm.toolPattern)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))}
-              {(!selectedRole?.toolPermissions || selectedRole.toolPermissions.length === 0) && (
-                <p className="text-xs text-default-400 italic text-center py-4">Chưa cấu hình quy tắc nào (Cho phép mặc định).</p>
+              {(!selectedRole?.toolPermissions ||
+                selectedRole.toolPermissions.length === 0) && (
+                <p className="text-xs text-default-400 italic text-center py-4">
+                  Chưa cấu hình quy tắc nào (Cho phép mặc định).
+                </p>
               )}
             </div>
           </div>
 
           {/* Add new permission pattern rule */}
-          <form onSubmit={handleAddPermission} className="border-t border-default-150 pt-4 space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">Thêm quy tắc mới</span>
-            <TextField isRequired name="toolPattern" className="w-full">
-              <Label className="text-default-500 text-xs font-semibold mb-1 block">Mẫu công cụ (Tool Pattern / Wildcard)</Label>
+          <form
+            className="border-t border-default-150 pt-4 space-y-3"
+            onSubmit={handleAddPermission}
+          >
+            <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">
+              Thêm quy tắc mới
+            </span>
+            <TextField isRequired className="w-full" name="toolPattern">
+              <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                Mẫu công cụ (Tool Pattern / Wildcard)
+              </Label>
               <Input
+                className="text-foreground"
                 placeholder="e.g. git:* hoặc leave:get_leave_days"
                 value={newPattern}
                 onChange={(e) => setNewPattern(e.target.value)}
-                className="text-foreground"
               />
             </TextField>
             <div className="flex items-center justify-between pt-1">
               <div>
-                <label className="text-xs font-semibold text-default-500 block mb-1">Cho phép chạy?</label>
+                <span className="text-xs font-semibold text-default-500 block mb-1">
+                  Cho phép chạy?
+                </span>
                 <select
+                  className="bg-default-100 text-foreground border border-default-200 focus:border-primary rounded px-2.5 py-1 text-xs focus:outline-none"
                   value={newAllowed ? "true" : "false"}
                   onChange={(e) => setNewAllowed(e.target.value === "true")}
-                  className="bg-default-100 text-foreground border border-default-200 focus:border-primary rounded px-2.5 py-1 text-xs focus:outline-none"
                 >
                   <option value="true">Cho phép (Allow)</option>
                   <option value="false">Từ chối (Deny)</option>
                 </select>
               </div>
-              <Button type="submit" size="sm" variant="primary">
+              <Button size="sm" type="submit" variant="primary">
                 <Plus className="h-3.5 w-3.5" />
                 Thêm Quy tắc
               </Button>
