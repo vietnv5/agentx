@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   FileCode,
   AlertCircle,
@@ -54,12 +54,12 @@ export function AuditView() {
     try {
       setLoading(true);
       setError(null);
-      const [toolsRes, llmRes] = await Promise.all([
-        apiClient.get("/api/admin/audit/tools?limit=50"),
-        apiClient.get("/api/admin/audit/usage?limit=50"),
+      const [toolsData, llmData] = await Promise.all([
+        adminService.getToolsAuditLogs(50),
+        adminService.getLlmUsageLogs(50),
       ]);
-      setToolsLogs(toolsRes.data);
-      setLlmLogs(llmRes.data);
+      setToolsLogs(toolsData);
+      setLlmLogs(llmData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải dữ liệu kiểm toán");
     } finally {

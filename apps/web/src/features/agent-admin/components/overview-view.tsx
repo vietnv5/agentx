@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   TrendingUp,
   Cpu,
@@ -39,8 +39,8 @@ export default function OverviewView() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get("/api/admin/audit/stats");
-      setStats(res.data);
+      const data = await adminService.getOverviewStats();
+      setStats(data);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải số liệu thống kê");
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   Plug,
   Plus,
@@ -75,8 +75,8 @@ export default function IntegrationsView() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get("/api/admin/integrations");
-      setIntegrations(res.data);
+      const data = await adminService.getIntegrations();
+      setIntegrations(data);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải danh sách tích hợp");
     } finally {
@@ -150,9 +150,9 @@ export default function IntegrationsView() {
 
     try {
       if (editingId) {
-        await apiClient.patch(`/api/admin/integrations/${editingId}`, payload);
+        await adminService.updateIntegration(editingId, payload);
       } else {
-        await apiClient.post("/api/admin/integrations", payload);
+        await adminService.createIntegration(payload);
       }
       resetForm();
       loadData();
@@ -164,7 +164,7 @@ export default function IntegrationsView() {
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa MCP Integration này? Toàn bộ tool definitions sẽ bị xóa.")) return;
     try {
-      await apiClient.delete(`/api/admin/integrations/${id}`);
+      await adminService.deleteIntegration(id);
       loadData();
     } catch (err: any) {
       alert(err.response?.data?.message || "Xóa tích hợp thất bại");
@@ -174,10 +174,10 @@ export default function IntegrationsView() {
   const handleTestConnection = async (id: string) => {
     setTestingId(id);
     try {
-      const res = await apiClient.post(`/api/admin/integrations/${id}/test`);
+      const data = await adminService.testIntegration(id);
       setTestResult((prev) => ({
         ...prev,
-        [id]: { success: res.data.success, error: res.data.error, tools: res.data.tools },
+        [id]: { success: data.success, error: data.error, tools: data.tools },
       }));
     } catch (err: any) {
       setTestResult((prev) => ({
@@ -191,7 +191,7 @@ export default function IntegrationsView() {
 
   const handleSyncTools = async (id: string) => {
     try {
-      await apiClient.post(`/api/admin/integrations/${id}/sync`);
+      await adminService.syncIntegration(id);
       alert("Đồng bộ danh sách tools thành công!");
       loadData();
     } catch (err: any) {
@@ -201,9 +201,7 @@ export default function IntegrationsView() {
 
   const handleToggleToolApproval = async (toolId: string, currentVal: boolean) => {
     try {
-      await apiClient.patch(`/api/admin/integrations/tools/${toolId}/approval`, {
-        requiresApproval: !currentVal,
-      });
+      await adminService.toggleToolApproval(toolId, !currentVal);
       loadData();
     } catch (err: any) {
       alert("Không thể thay đổi phân quyền tool");

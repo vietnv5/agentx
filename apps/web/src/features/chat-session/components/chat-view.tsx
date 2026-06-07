@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
-import { useAuthStore } from "@/src/features/auth/auth-store";
+import { chatService } from "@/src/features/chat-session/services/chat.service";
+import { useChatStream } from "@/src/features/chat-session/hooks/useChatStream";
 import {
   MessageSquare,
   Plus,
@@ -10,7 +10,6 @@ import {
   Send,
   Bot,
   User as UserIcon,
-  Play,
   CheckCircle,
   Clock,
   ShieldCheck,
@@ -35,38 +34,28 @@ interface Conversation {
   updatedAt: string;
 }
 
-interface ToolLog {
-  toolName: string;
-  args?: any;
-  output?: any;
-  status: "pending" | "success" | "error" | "denied";
-}
-
 export default function ChatView() {
-  const { accessToken } = useAuthStore.getState();
   const [conversations, setConversations] = React.useState<Conversation[]>([]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [messages, setMessages] = React.useState<Message[]>([]);
-  const [input, setInput] = React.useState("");
 
   const [loadingConv, setLoadingConv] = React.useState(true);
   const [loadingMsgs, setLoadingMsgs] = React.useState(false);
-
-  // Streaming States
-  const [isStreaming, setIsStreaming] = React.useState(false);
-  const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(null);
-  const [streamingText, setStreamingText] = React.useState("");
-  const [runningTool, setRunningTool] = React.useState<ToolLog | null>(null);
-  const [completedTools, setCompletedTools] = React.useState<ToolLog[]>([]);
+  const [input, setInput] = React.useState("");
   const [showToolLogs, setShowToolLogs] = React.useState(true);
 
-  // Approval Modal/Card State
-  const [pendingApproval, setPendingApproval] = React.useState<{
-    id: string;
-    toolName: string;
-    args: any;
-    description?: string;
-  } | null>(null);
+  // Hook Stream Logic
+  const {
+    isStreaming,
+    routedAgentName,
+    streamingText,
+    runningTool,
+    completedTools,
+    pendingApproval,
+    setPendingApproval,
+    sendMessage,
+    decideApproval,
+  } = useChatStream();
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -81,10 +70,10 @@ export default function ChatView() {
   const loadConversations = React.useCallback(async (selectFirst = false) => {
     try {
       setLoadingConv(true);
-      const res = await apiClient.get("/api/chat/conversations");
-      setConversations(res.data);
-      if (selectFirst && res.data.length > 0) {
-        setActiveId(res.data[0].id);
+      const data = await chatService.getConversations();
+      setConversations(data);
+      if (selectFirst && data.length > 0) {
+        setActiveId(data[0].id);
       }
     } catch (err) {
       console.error("Không tải được danh sách hội thoại", err);
@@ -96,14 +85,14 @@ export default function ChatView() {
   const loadMessages = React.useCallback(async (id: string) => {
     try {
       setLoadingMsgs(true);
-      const res = await apiClient.get(`/api/chat/conversations/${id}`);
-      setMessages(res.data.messages || []);
+      const resData = await chatService.getConversationMessages(id);
+      setMessages(resData.messages || []);
       setPendingApproval(null);
 
       // Lấy danh sách approval đang chờ của hội thoại này
-      const approvalRes = await apiClient.get(`/api/chat/conversations/${id}/approvals`);
-      if (approvalRes.data.length > 0) {
-        const req = approvalRes.data[0];
+      const approvalData = await chatService.getConversationApprovals(id);
+      if (approvalData.length > 0) {
+        const req = approvalData[0];
         setPendingApproval({
           id: req.id,
           toolName: req.toolName,
@@ -116,7 +105,7 @@ export default function ChatView() {
     } finally {
       setLoadingMsgs(false);
     }
-  }, []);
+  }, [setPendingApproval]);
 
   React.useEffect(() => {
     loadConversations(true);
@@ -129,15 +118,15 @@ export default function ChatView() {
       setMessages([]);
       setPendingApproval(null);
     }
-  }, [activeId, loadMessages]);
+  }, [activeId, loadMessages, setPendingApproval]);
 
   const handleCreateConv = async () => {
     try {
-      const res = await apiClient.post("/api/chat/conversations", {
-        title: `Cuộc hội thoại #${conversations.length + 1}`,
-      });
+      const data = await chatService.createConversation(
+        `Cuộc hội thoại #${conversations.length + 1}`,
+      );
       await loadConversations();
-      setActiveId(res.data.id);
+      setActiveId(data.id);
     } catch (err) {
       alert("Tạo hội thoại mới lỗi");
     }
@@ -147,92 +136,11 @@ export default function ChatView() {
     e.stopPropagation();
     if (!confirm("Bạn có muốn xóa cuộc hội thoại này?")) return;
     try {
-      await apiClient.delete(`/api/chat/conversations/${id}`);
+      await chatService.deleteConversation(id);
       if (activeId === id) setActiveId(null);
       loadConversations();
     } catch (err) {
       alert("Xóa hội thoại lỗi");
-    }
-  };
-
-  // Hàm đọc SSE Stream bằng Fetch Reader để đính kèm Token Auth
-  const readStream = async (url: string) => {
-    setIsStreaming(true);
-    setStreamingText("");
-    setRoutedAgentName(null);
-    setRunningTool(null);
-    setCompletedTools([]);
-    setPendingApproval(null);
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("Không thể khởi tạo luồng đọc.");
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const cleanLine = line.trim();
-          if (cleanLine.startsWith("data:")) {
-            try {
-              const eventWrapper = JSON.parse(cleanLine.slice(5).trim());
-              const { event, data } = eventWrapper;
-
-              if (event === "agent_routing") {
-                setRoutedAgentName(data.agentName);
-              } else if (event === "token") {
-                setStreamingText((prev) => prev + data);
-              } else if (event === "tool_start") {
-                setRunningTool({ toolName: data.toolName, args: data.args, status: "pending" });
-              } else if (event === "tool_end") {
-                setRunningTool(null);
-                setCompletedTools((prev) => [
-                  ...prev,
-                  { toolName: data.toolName, output: data.output, status: data.status === "success" ? "success" : "error" },
-                ]);
-              } else if (event === "tool_approval_required") {
-                setPendingApproval({
-                  id: data.approvalRequestId,
-                  toolName: data.toolName,
-                  args: data.args,
-                  description: data.description,
-                });
-              } else if (event === "complete") {
-                // Done. Reload messages history from db to get final formatted items
-                if (activeId) {
-                  await loadMessages(activeId);
-                }
-              } else if (event === "error") {
-                alert(`Lỗi thực thi agent: ${data}`);
-              }
-            } catch (e) {
-              // Parse error
-            }
-          }
-        }
-      }
-    } catch (err: any) {
-      alert(`Lỗi kết nối stream: ${err.message}`);
-    } finally {
-      setIsStreaming(false);
-      setRunningTool(null);
-      setStreamingText("");
     }
   };
 
@@ -254,11 +162,12 @@ export default function ChatView() {
       },
     ]);
 
-    const url = `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    }/api/chat/conversations/${activeId}/messages/stream?content=${encodeURIComponent(msgText)}`;
-    
-    await readStream(url);
+    await sendMessage(activeId, msgText, async () => {
+      // Done. Reload messages history from db to get final formatted items
+      if (activeId) {
+        await loadMessages(activeId);
+      }
+    });
   };
 
   const handleDecideApproval = async (approved: boolean) => {
@@ -267,11 +176,12 @@ export default function ChatView() {
     const approvalId = pendingApproval.id;
     setPendingApproval(null);
 
-    const url = `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    }/api/chat/conversations/${activeId}/approval/${approvalId}/decide/stream?approved=${approved}`;
-
-    await readStream(url);
+    await decideApproval(activeId, approvalId, approved, async () => {
+      // Done. Reload messages history from db to get final formatted items
+      if (activeId) {
+        await loadMessages(activeId);
+      }
+    });
   };
 
   return (
@@ -466,7 +376,7 @@ export default function ChatView() {
 
                   <Card className="bg-content1 border border-amber-500/25 p-5 rounded-xl max-w-lg space-y-4 shadow-sm">
                     <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-450 shrink-0 mt-0.5" />
+                      <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-455 shrink-0 mt-0.5" />
                       <div className="text-xs">
                         <span className="font-bold text-foreground">Yêu cầu Phê duyệt chạy Công cụ (Approval Gate)</span>
                         <p className="text-default-500 mt-1 leading-relaxed">{pendingApproval.description}</p>

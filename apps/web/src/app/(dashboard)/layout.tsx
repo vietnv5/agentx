@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/src/features/auth/auth-store";
-import { apiClient } from "@/src/lib/api-client";
+import { authService } from "@/src/features/auth/services/auth.service";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { LanguageSwitch } from "@/components/language-switch";
 import {
@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = async () => {
     try {
       const refreshToken = useAuthStore.getState().refreshToken;
-      await apiClient.post("/api/auth/logout", { refreshToken });
+      await authService.logout(refreshToken);
     } catch (err) {
       console.error("Lỗi khi đăng xuất trên server:", err);
     } finally {

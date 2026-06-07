@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   Users,
   Shield,
@@ -60,18 +60,18 @@ export function UsersView() {
     try {
       setLoading(true);
       setError(null);
-      const [usersRes, rolesRes] = await Promise.all([
-        apiClient.get("/api/admin/users"),
-        apiClient.get("/api/admin/users/roles"),
+      const [usersData, rolesData] = await Promise.all([
+        adminService.getUsers(),
+        adminService.getRoles(),
       ]);
-      setUsers(usersRes.data);
-      setRoles(rolesRes.data);
+      setUsers(usersData);
+      setRoles(rolesData);
       // Select the first role by default for matrix config
-      if (rolesRes.data.length > 0 && !selectedRole) {
-        setSelectedRole(rolesRes.data[0]);
+      if (rolesData.length > 0 && !selectedRole) {
+        setSelectedRole(rolesData[0]);
       } else if (selectedRole) {
-        const updated = rolesRes.data.find((r: Role) => r.id === selectedRole.id);
-        setSelectedRole(updated || rolesRes.data[0]);
+        const updated = rolesData.find((r: Role) => r.id === selectedRole.id);
+        setSelectedRole(updated || rolesData[0]);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải danh sách tài khoản");
@@ -86,7 +86,7 @@ export function UsersView() {
 
   const handleToggleActive = async (user: User) => {
     try {
-      await apiClient.patch(`/api/admin/users/${user.id}`, {
+      await adminService.updateUser(user.id, {
         isActive: !user.isActive,
       });
       loadData();
@@ -97,7 +97,7 @@ export function UsersView() {
 
   const handleChangeRole = async (user: User, roleId: string) => {
     try {
-      await apiClient.patch(`/api/admin/users/${user.id}`, {
+      await adminService.updateUser(user.id, {
         roleId,
       });
       loadData();
@@ -111,7 +111,7 @@ export function UsersView() {
     if (!selectedRole || !newPattern.trim()) return;
 
     try {
-      await apiClient.post(`/api/admin/users/roles/${selectedRole.id}/permissions`, {
+      await adminService.updateRolePermissions(selectedRole.id, {
         toolPattern: newPattern.trim(),
         allowed: newAllowed,
       });
@@ -127,7 +127,7 @@ export function UsersView() {
     try {
       // Vì API post cũng hoạt động như upsert, ta chỉ cần gửi allowed: false hoặc ngược lại
       // Để thực sự xóa hoặc vô hiệu hóa, gán allowed = false
-      await apiClient.post(`/api/admin/users/roles/${selectedRole.id}/permissions`, {
+      await adminService.updateRolePermissions(selectedRole.id, {
         toolPattern: pattern,
         allowed: false,
       });

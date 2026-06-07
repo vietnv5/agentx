@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   Bot,
   Plus,
@@ -75,12 +75,12 @@ export default function AgentsView() {
     try {
       setLoading(true);
       setError(null);
-      const [agentsRes, toolsRes] = await Promise.all([
-        apiClient.get("/api/admin/agents"),
-        apiClient.get("/api/admin/integrations/tools"),
+      const [agentsData, toolsData] = await Promise.all([
+        adminService.getAgents(),
+        adminService.getTools(),
       ]);
-      setAgents(agentsRes.data);
-      setTools(toolsRes.data);
+      setAgents(agentsData);
+      setTools(toolsData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải cấu hình agents/tools");
     } finally {
@@ -160,9 +160,9 @@ export default function AgentsView() {
 
     try {
       if (editingId) {
-        await apiClient.patch(`/api/admin/agents/${editingId}`, payload);
+        await adminService.updateAgent(editingId, payload);
       } else {
-        await apiClient.post("/api/admin/agents", payload);
+        await adminService.createAgent(payload);
       }
       resetForm();
       loadData();
@@ -174,7 +174,7 @@ export default function AgentsView() {
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa Agent này?")) return;
     try {
-      await apiClient.delete(`/api/admin/agents/${id}`);
+      await adminService.deleteAgent(id);
       loadData();
     } catch (err: any) {
       alert(err.response?.data?.message || "Xóa Agent thất bại");

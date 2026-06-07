@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiClient } from "@/src/lib/api-client";
+import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import {
   FolderOpen,
   Plus,
@@ -66,8 +66,8 @@ export function KnowledgeView() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get("/api/admin/knowledge/documents");
-      setDocuments(res.data);
+      const data = await adminService.getKnowledge();
+      setDocuments(data);
     } catch (err: any) {
       setError(err.response?.data?.message || "Không thể tải danh sách tài liệu");
     } finally {
@@ -91,7 +91,7 @@ export function KnowledgeView() {
     if (!formTitle.trim() || !formContent.trim()) return;
 
     try {
-      await apiClient.post("/api/admin/knowledge/upload", {
+      await adminService.uploadKnowledge({
         title: formTitle,
         content: formContent,
         sourceType: formSourceType,
@@ -109,7 +109,7 @@ export function KnowledgeView() {
   const handleDeleteDoc = async (id: string) => {
     if (!confirm("Bạn có muốn xóa tài liệu này? Toàn bộ vector chunks liên quan sẽ bị xóa sạch.")) return;
     try {
-      await apiClient.delete(`/api/admin/knowledge/documents/${id}`);
+      await adminService.deleteKnowledge(id);
       loadData();
     } catch (err: any) {
       alert("Xóa tài liệu thất bại");
@@ -122,11 +122,11 @@ export function KnowledgeView() {
 
     setSearching(true);
     try {
-      const res = await apiClient.post("/api/admin/knowledge/search", {
+      const data = await adminService.searchKnowledge({
         query: searchQuery,
         limit: 5,
       });
-      setSearchResults(res.data);
+      setSearchResults(data);
     } catch (err: any) {
       alert("Tìm kiếm ngữ nghĩa lỗi");
     } finally {

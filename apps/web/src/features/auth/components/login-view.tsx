@@ -6,7 +6,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Bot } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useTranslations } from "next-intl";
-import { apiClient } from "@/src/lib/api-client";
+import { authService } from "@/src/features/auth/services/auth.service";
 import { useAuthStore } from "@/src/features/auth/auth-store";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { LanguageSwitch } from "@/components/language-switch";
@@ -37,16 +37,16 @@ export default function LoginView() {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post("/api/auth/login", {
+      const data = await authService.login({
         email,
         password,
       });
 
-      const { accessToken, refreshToken, user } = response.data;
-      setAuth(accessToken, refreshToken, user);
+      const { accessToken, refreshToken, user: authUser } = data;
+      setAuth(accessToken, refreshToken, authUser);
 
       // Chuyển hướng người dùng dựa vào vai trò
-      if (user.role?.name === "ADMIN") {
+      if (authUser.role?.name === "ADMIN") {
         router.push("/admin");
       } else {
         router.push("/chat");
