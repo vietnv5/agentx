@@ -293,6 +293,7 @@ export default function AgentsView() {
                     >
                       <option value="openai">OpenAI</option>
                       <option value="anthropic">Anthropic</option>
+                      <option value="local">Local AI (Ollama)</option>
                     </select>
                   </div>
                   <div>

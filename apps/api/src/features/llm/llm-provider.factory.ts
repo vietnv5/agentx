@@ -24,9 +24,15 @@ export class LlmProviderFactory {
         baseURL,
       });
       return anthropic(model);
+    } else if (provider.toLowerCase() === 'local' || provider.toLowerCase() === 'ollama') {
+      const localAi = createOpenAI({
+        apiKey,
+        baseURL,
+      });
+      return localAi(model);
     }
 
-    throw new Error(`LLM Provider '${provider}' không hỗ trợ. Chỉ hỗ trợ 'openai' và 'anthropic'.`);
+    throw new Error(`LLM Provider '${provider}' không hỗ trợ. Chỉ hỗ trợ 'openai', 'anthropic', và 'local'/'ollama'.`);
   }
 
   getEmbeddingProvider(model: string, config: any = {}): any {
@@ -47,6 +53,9 @@ export class LlmProviderFactory {
     if (provider.toLowerCase() === 'anthropic') {
       return process.env.ANTHROPIC_API_KEY || '';
     }
+    if (provider.toLowerCase() === 'local' || provider.toLowerCase() === 'ollama') {
+      return process.env.LOCAL_AI_API_KEY || 'ollama';
+    }
     return '';
   }
 
@@ -56,6 +65,9 @@ export class LlmProviderFactory {
     }
     if (provider.toLowerCase() === 'anthropic') {
       return process.env.ANTHROPIC_BASE_URL;
+    }
+    if (provider.toLowerCase() === 'local' || provider.toLowerCase() === 'ollama') {
+      return process.env.LOCAL_AI_BASE_URL || 'http://localhost:11434/v1';
     }
     return undefined;
   }

@@ -4,6 +4,8 @@ import { DRIZZLE_PROVIDER } from '../drizzle.provider';
 import * as schema from '../schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcryptjs';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class DatabaseSeeder implements OnApplicationBootstrap {
@@ -19,6 +21,7 @@ export class DatabaseSeeder implements OnApplicationBootstrap {
     try {
       await this.seedRoles();
       await this.seedAdminUser();
+      await this.seedDefaultAgents();
     } catch (error) {
       this.logger.error('Lỗi khi seed dữ liệu khởi tạo:', (error as Error).stack);
     }
@@ -77,6 +80,87 @@ export class DatabaseSeeder implements OnApplicationBootstrap {
       this.logger.warn('====================================================');
     } else {
       this.logger.log('Tài khoản Admin đã tồn tại. Bỏ qua bước seed user.');
+    }
+  }
+
+  private readPromptFile(filename: string, defaultPrompt: string): string {
+    const pathsToTry = [
+      path.join(__dirname, 'prompts', filename),
+      path.join(process.cwd(), 'src', 'database', 'seeds', 'prompts', filename),
+      path.join(process.cwd(), 'apps', 'api', 'src', 'database', 'seeds', 'prompts', filename),
+    ];
+
+    for (const p of pathsToTry) {
+      if (fs.existsSync(p)) {
+        try {
+          return fs.readFileSync(p, 'utf8');
+        } catch (e: any) {
+          this.logger.warn(`Lỗi khi đọc file prompt tại ${p}: ${e.message}`);
+        }
+      }
+    }
+
+    this.logger.warn(`Không tìm thấy file prompt ${filename} ở bất cứ đường dẫn nào. Sử dụng prompt mặc định.`);
+    return defaultPrompt;
+  }
+
+  private async seedDefaultAgents() {
+    // 1. Seed Router Agent nếu chưa tồn tại bất kỳ Router Agent nào
+    const routerExists = await this.db.query.agents.findFirst({
+      where: eq(schema.agents.isRouter, true),
+    });
+
+    if (!routerExists) {
+      const routerInstructions = this.readPromptFile(
+        'system-router.md',
+        'Bạn là Router Agent định tuyến yêu cầu của người dùng đến Specialist Agent phù hợp nhất. Trả về JSON { "targetAgentId": "uuid" }'
+      );
+
+      await this.db.insert(schema.agents).values({
+        name: 'System Router',
+        systemInstructions: routerInstructions,
+        llmProvider: 'local',
+        llmModel: 'llama3.1:8b-instruct-q8_0',
+        tier: 'fast',
+        isRouter: true,
+        maxSteps: 10,
+        config: {},
+        isActive: true,
+      });
+      this.logger.log('Đã seed Router Agent mặc định từ file .md: System Router (Local AI)');
+    }
+
+    // 2. Seed Specialist Agent nếu chưa tồn tại bất kỳ Specialist Agent nào
+    const specialistExists = await this.db.query.agents.findFirst({
+      where: eq(schema.agents.isRouter, false),
+    });
+
+    if (!specialistExists) {
+      const assistantInstructions = this.readPromptFile(
+        'general-assistant.md',
+        'Bạn là trợ lý ảo hữu ích, chạy cục bộ bằng mô hình Llama 3.1 8B.'
+      );
+
+      const [newAgent] = await this.db.insert(schema.agents).values({
+        name: 'General Assistant',
+        systemInstructions: assistantInstructions,
+        llmProvider: 'local',
+        llmModel: 'llama3.1:8b-instruct-q8_0',
+        tier: 'smart',
+        isRouter: false,
+        maxSteps: 10,
+        config: {},
+        isActive: true,
+      }).returning();
+
+      // Thêm kỹ năng mặc định cho Specialist Agent
+      await this.db.insert(schema.agentSkills).values({
+        agentId: newAgent.id,
+        name: 'General',
+        description: 'Giải đáp các thắc mắc chung và hỗ trợ hội thoại hàng ngày',
+      });
+
+      this.logger.log('Đã seed Specialist Agent mặc định từ file .md: General Assistant (Local AI)');
     }
   }
 }

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agentx-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - agentx-network
+    restart: unless-stopped
+
+  ollama-pull-model:
+    image: curlimages/curl:latest
+    container_name: agentx-ollama-pull-model
+    entrypoint: [ "sh", "-c", "sleep 5 && curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.1:8b-instruct-q8_0\", \"stream\": false}'" ]
+    depends_on:
+      - ollama
+    networks:
+      - agentx-network
+
+volumes:
+  ollama_data:
+
+networks:
+  agentx-network:
+    name: agentx-network
+    external: true

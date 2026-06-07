@@ -156,6 +156,9 @@ export class LlmService {
         inputRatePerMillion = 8.0; // Fallback
         outputRatePerMillion = 24.0;
       }
+    } else if (p === 'local' || p === 'ollama') {
+      inputRatePerMillion = 0.0;
+      outputRatePerMillion = 0.0;
     } else {
       inputRatePerMillion = 1.0;
       outputRatePerMillion = 3.0;
