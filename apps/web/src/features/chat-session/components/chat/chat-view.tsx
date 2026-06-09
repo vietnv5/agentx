@@ -35,6 +35,18 @@ export default function ChatView() {
   const [loadingConv, setLoadingConv] = React.useState(true);
   const [loadingMsgs, setLoadingMsgs] = React.useState(false);
 
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("chat_sidebar_open");
+      return saved !== null ? saved === "true" : true;
+    }
+    return true;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("chat_sidebar_open", String(isSidebarOpen));
+  }, [isSidebarOpen]);
+
   // Hook Stream Logic
   const {
     isStreaming,
@@ -171,7 +183,7 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background font-sans">
+    <div className="flex h-full w-full overflow-hidden bg-background font-sans relative">
       <ChatSidebar
         activeId={activeId}
         conversations={conversations}
@@ -180,10 +192,16 @@ export default function ChatView() {
         setActiveId={setActiveId}
         onCreateConv={handleCreateConv}
         onDeleteConv={handleDeleteConv}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      <div className="flex-1 flex flex-col h-full bg-default-50/10 relative">
-        <ChatHeader routedAgentName={routedAgentName} />
+      <div className="flex-1 flex flex-col h-full bg-default-50/10 relative overflow-hidden">
+        <ChatHeader
+          routedAgentName={routedAgentName}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
         <ChatThread
           activeId={activeId}

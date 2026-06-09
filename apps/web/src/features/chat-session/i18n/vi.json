@@ -1,6 +1,8 @@
 {
   "chat.history.title": "Lịch sử Hội thoại",
   "chat.history.empty": "Chưa có cuộc hội thoại nào.",
+  "chat.newChat": "Cuộc trò chuyện mới",
+  "chat.history.searchPlaceholder": "Tìm kiếm cuộc trò chuyện...",
   "chat.header.title": "AgentX Playground",
   "chat.header.subtitle": "ReAct Loop, SSE Streaming & Human-in-the-loop approvals.",
   "chat.header.routed": "Routed: {name}",

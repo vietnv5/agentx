@@ -1,6 +1,8 @@
 {
   "chat.history.title": "Conversations History",
   "chat.history.empty": "No conversations yet.",
+  "chat.newChat": "New Chat",
+  "chat.history.searchPlaceholder": "Search conversations...",
   "chat.header.title": "AgentX Playground",
   "chat.header.subtitle": "ReAct Loop, SSE Streaming & Human-in-the-loop approvals.",
   "chat.header.routed": "Routed: {name}",
