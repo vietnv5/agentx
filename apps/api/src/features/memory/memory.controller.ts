@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards, HttpStatus, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { MemoryService } from './memory.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UploadKnowledgeDto } from './dto/upload-knowledge.dto';
+import { SearchKnowledgeDto } from './dto/search-knowledge.dto';
 
 @ApiTags('Admin Knowledge Base')
 @ApiBearerAuth()
@@ -33,7 +35,7 @@ export class MemoryController {
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Tải lên thành công và bắt đầu xử lý indexing' })
   upload(
     @CurrentUser() user: any,
-    @Body() body: { title: string; content: string; sourceType: string; filename?: string },
+    @Body() body: UploadKnowledgeDto,
   ) {
     return this.memoryService.uploadAndProcessDocument(
       body.title,
@@ -48,9 +50,9 @@ export class MemoryController {
   @ApiOperation({ summary: 'Tìm kiếm tương đồng ngữ nghĩa trên toàn bộ Cơ sở tri thức' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Truy vấn thành công' })
   search(
-    @Body('query') query: string,
-    @Body('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Body() body: SearchKnowledgeDto,
   ) {
-    return this.memoryService.similaritySearch(query, limit ?? 5);
+    return this.memoryService.similaritySearch(body.query, body.limit ?? 5);
   }
 }
+

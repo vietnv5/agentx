@@ -45,17 +45,22 @@ export function KnowledgeView() {
     }
   }, [t]);
 
+  const documentsRef = React.useRef(documents);
+  React.useEffect(() => {
+    documentsRef.current = documents;
+  }, [documents]);
+
   React.useEffect(() => {
     loadData();
     // Tự động reload danh sách mỗi 10s nếu có tài liệu đang processing
     const interval = setInterval(() => {
-      if (documents.some((d) => d.status === "processing")) {
+      if (documentsRef.current.some((d) => d.status === "processing")) {
         loadData();
       }
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [loadData, documents]);
+  }, [loadData]);
 
   const handleUploadSubmit = async (payload: {
     title: string;

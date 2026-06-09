@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
-import { Card, Button, Spinner } from "@heroui/react";
+import { Card, Button, Spinner, Input, TextField } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface SearchResult {
@@ -49,19 +49,23 @@ export function SearchSandbox({ onSearch }: SearchSandboxProps) {
         </p>
       </div>
 
-      <form className="flex gap-2" onSubmit={handleSearchTest}>
-        <input
-          className="flex-1 bg-default-100 text-foreground border border-default-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-purple-500"
-          placeholder={t("knowledge.search.placeholder")}
-          type="text"
+      <form className="flex w-full items-start gap-2" onSubmit={handleSearchTest}>
+        <TextField
+          aria-label={t("knowledge.search.placeholder")}
+          className="flex-1"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+          onChange={setSearchQuery}
+        >
+          <Input
+            className="w-full text-foreground"
+            placeholder={t("knowledge.search.placeholder")}
+          />
+        </TextField>
         <Button
           isIconOnly
-          className="cursor-pointer"
+          className="cursor-pointer shrink-0"
           isDisabled={searching}
-          size="sm"
+          size="md"
           type="submit"
           variant="secondary"
         >

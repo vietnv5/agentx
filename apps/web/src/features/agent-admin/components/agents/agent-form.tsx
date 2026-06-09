@@ -154,19 +154,17 @@ export function AgentForm({
         <div className="grid gap-6 md:grid-cols-2">
           {/* Left Column - Core Config */}
           <div className="space-y-4">
-            <TextField isRequired className="w-full" name="name">
+            <TextField isRequired className="w-full" name="name" value={formName} onChange={setFormName}>
               <Label className="text-default-500 text-xs font-semibold mb-1 block">
                 {t("agents.editor.name")}
               </Label>
               <Input
                 className="text-foreground"
                 placeholder={t("agents.editor.namePlaceholder")}
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
               />
             </TextField>
 
-            <TextField isRequired className="w-full" name="systemInstructions">
+            <TextField isRequired className="w-full" name="systemInstructions" value={formPrompt} onChange={setFormPrompt}>
               <Label className="text-default-500 text-xs font-semibold mb-1 block">
                 {t("agents.editor.instructions")}
               </Label>
@@ -174,8 +172,6 @@ export function AgentForm({
                 className="text-foreground"
                 placeholder={t("agents.editor.instructionsPlaceholder")}
                 rows={6}
-                value={formPrompt}
-                onChange={(e) => setFormPrompt(e.target.value)}
               />
             </TextField>
 
@@ -209,7 +205,7 @@ export function AgentForm({
             </div>
 
             <div className="grid gap-4 grid-cols-2">
-              <TextField className="w-full" name="maxSteps">
+              <TextField className="w-full" name="maxSteps" value={formMaxSteps.toString()} onChange={(val) => setFormMaxSteps(Number(val))}>
                 <Label className="text-default-500 text-xs font-semibold mb-1 block">
                   {t("agents.editor.maxSteps")}
                 </Label>
@@ -218,8 +214,6 @@ export function AgentForm({
                   max={20}
                   min={1}
                   type="number"
-                  value={formMaxSteps.toString()}
-                  onChange={(e) => setFormMaxSteps(Number(e.target.value))}
                 />
               </TextField>
               <div>

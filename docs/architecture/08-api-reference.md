@@ -423,13 +423,13 @@ POST /api/admin/integrations/test
 ### 4.3 Users & Roles
 
 ```
-GET    /api/admin/users                      → List users
-POST   /api/admin/users                      → Create user
-PATCH  /api/admin/users/:id                  → Update user
-DELETE /api/admin/users/:id                  → Delete user (soft)
-GET    /api/admin/roles                      → List roles
-POST   /api/admin/roles/:id/permissions      → Set tool permissions
-GET    /api/admin/roles/:id/permissions      → Get role permissions
+GET    /api/admin/users                                   → List users
+POST   /api/admin/users                                   → Create user
+PATCH  /api/admin/users/:id                               → Update user
+DELETE /api/admin/users/:id                               → Delete user (soft delete)
+GET    /api/admin/users/roles                             → List roles
+POST   /api/admin/users/roles/:roleId/permissions         → Set tool permissions for role
+GET    /api/admin/users/roles/:roleId/permissions         → Get tool permissions for role
 ```
 
 #### Create User

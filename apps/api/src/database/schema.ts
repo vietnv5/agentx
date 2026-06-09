@@ -30,6 +30,7 @@ export const users = pgTable('users', {
   name: varchar('name', { length: 255 }).notNull(),
   roleId: uuid('role_id').notNull().references(() => roles.id),
   isActive: boolean('is_active').default(true).notNull(),
+  deleted: boolean('deleted').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [

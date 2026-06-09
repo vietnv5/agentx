@@ -133,19 +133,17 @@ export function IntegrationForm({
         <div className="grid gap-6 md:grid-cols-2">
           {/* Left Side */}
           <div className="space-y-4">
-            <TextField isRequired className="w-full" name="name">
+            <TextField isRequired className="w-full" name="name" value={formName} onChange={setFormName}>
               <Label className="text-default-500 text-xs font-semibold mb-1 block">
                 {t("integrations.editor.name")}
               </Label>
               <Input
                 className="text-foreground"
                 placeholder={t("integrations.editor.namePlaceholder")}
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
               />
             </TextField>
 
-            <TextField className="w-full" name="description">
+            <TextField className="w-full" name="description" value={formDesc} onChange={setFormDesc}>
               <Label className="text-default-500 text-xs font-semibold mb-1 block">
                 {t("integrations.editor.desc")}
               </Label>
@@ -153,8 +151,6 @@ export function IntegrationForm({
                 className="text-foreground"
                 placeholder={t("integrations.editor.descPlaceholder")}
                 rows={2}
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
               />
             </TextField>
 
@@ -200,18 +196,16 @@ export function IntegrationForm({
           <div className="space-y-4">
             {formTransport === "sse" ? (
               <div className="space-y-4">
-                <TextField isRequired className="w-full" name="endpoint">
+                <TextField isRequired className="w-full" name="endpoint" value={formEndpoint} onChange={setFormEndpoint}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
                     {t("integrations.editor.sseUrl")}
                   </Label>
                   <Input
                     className="text-foreground"
                     placeholder={t("integrations.editor.sseUrlPlaceholder")}
-                    value={formEndpoint}
-                    onChange={(e) => setFormEndpoint(e.target.value)}
                   />
                 </TextField>
-                <TextField className="w-full" name="headers">
+                <TextField className="w-full" name="headers" value={formHeaders} onChange={setFormHeaders}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
                     {t("integrations.editor.headers")}
                   </Label>
@@ -219,25 +213,21 @@ export function IntegrationForm({
                     className="text-foreground font-mono text-xs"
                     placeholder={t("integrations.editor.headersPlaceholder")}
                     rows={4}
-                    value={formHeaders}
-                    onChange={(e) => setFormHeaders(e.target.value)}
                   />
                 </TextField>
               </div>
             ) : (
               <div className="space-y-4">
-                <TextField isRequired className="w-full" name="command">
+                <TextField isRequired className="w-full" name="command" value={formCommand} onChange={setFormCommand}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
                     {t("integrations.editor.command")}
                   </Label>
                   <Input
                     className="text-foreground"
                     placeholder={t("integrations.editor.commandPlaceholder")}
-                    value={formCommand}
-                    onChange={(e) => setFormCommand(e.target.value)}
                   />
                 </TextField>
-                <TextField className="w-full" name="args">
+                <TextField className="w-full" name="args" value={formArgs} onChange={setFormArgs}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
                     {t("integrations.editor.args")}
                   </Label>
@@ -245,11 +235,9 @@ export function IntegrationForm({
                     className="text-foreground font-mono text-xs"
                     placeholder={t("integrations.editor.argsPlaceholder")}
                     rows={3}
-                    value={formArgs}
-                    onChange={(e) => setFormArgs(e.target.value)}
                   />
                 </TextField>
-                <TextField className="w-full" name="env">
+                <TextField className="w-full" name="env" value={formEnv} onChange={setFormEnv}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
                     {t("integrations.editor.env")}
                   </Label>
@@ -257,8 +245,6 @@ export function IntegrationForm({
                     className="text-foreground font-mono text-xs"
                     placeholder={t("integrations.editor.envPlaceholder")}
                     rows={3}
-                    value={formEnv}
-                    onChange={(e) => setFormEnv(e.target.value)}
                   />
                 </TextField>
               </div>

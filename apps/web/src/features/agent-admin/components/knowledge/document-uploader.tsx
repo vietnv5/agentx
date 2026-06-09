@@ -46,15 +46,19 @@ export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) 
         </div>
 
         <div className="space-y-4">
-          <TextField isRequired className="w-full" name="title">
+          <TextField
+            isRequired
+            className="w-full"
+            name="title"
+            value={formTitle}
+            onChange={setFormTitle}
+          >
             <Label className="text-default-500 text-xs font-semibold mb-1 block">
               {t("knowledge.editor.docTitle")}
             </Label>
             <Input
               className="text-foreground"
               placeholder={t("knowledge.editor.docTitlePlaceholder")}
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
             />
           </TextField>
 
@@ -78,7 +82,13 @@ export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) 
             </div>
           </div>
 
-          <TextField isRequired className="w-full" name="content">
+          <TextField
+            isRequired
+            className="w-full"
+            name="content"
+            value={formContent}
+            onChange={setFormContent}
+          >
             <Label className="text-default-500 text-xs font-semibold mb-1 block">
               {t("knowledge.editor.content")}
             </Label>
@@ -86,8 +96,6 @@ export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) 
               className="text-foreground text-xs font-mono"
               placeholder={t("knowledge.editor.contentPlaceholder")}
               rows={10}
-              value={formContent}
-              onChange={(e) => setFormContent(e.target.value)}
             />
           </TextField>
         </div>

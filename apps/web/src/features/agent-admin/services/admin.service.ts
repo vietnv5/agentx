@@ -145,6 +145,15 @@ export const adminService = {
   },
 
   /**
+   * Tạo User mới
+   */
+  async createUser(payload: Record<string, any>) {
+    const response = await apiClient.post("/api/admin/users", payload);
+
+    return response.data;
+  },
+
+  /**
    * Cập nhật thông tin User (roleId, isActive...)
    */
   async updateUser(userId: string, payload: Record<string, any>) {
@@ -152,6 +161,15 @@ export const adminService = {
       `/api/admin/users/${userId}`,
       payload,
     );
+
+    return response.data;
+  },
+
+  /**
+   * Xóa User
+   */
+  async deleteUser(userId: string) {
+    const response = await apiClient.delete(`/api/admin/users/${userId}`);
 
     return response.data;
   },

@@ -36,7 +36,21 @@ export class LlmProviderFactory {
   }
 
   getEmbeddingProvider(model: string, config: any = {}): any {
-    const apiKey = config.apiKey || this.getApiKeyFromEnv('openai');
+    const openaiApiKey = config.apiKey || this.getApiKeyFromEnv('openai');
+    if (!openaiApiKey) {
+      const localBaseUrl = this.getBaseUrlFromEnv('local');
+      const localApiKey = this.getApiKeyFromEnv('local');
+      this.logger.log(`OpenAI API Key trống. Fallback sang Local AI Embedding: ${localBaseUrl}`);
+      const localAi = createOpenAI({
+        apiKey: localApiKey,
+        baseURL: localBaseUrl,
+      });
+      const embedModel = process.env.LOCAL_AI_EMBEDDING_MODEL || 'nomic-embed-text';
+      this.logger.log(`Sử dụng model local embedding: ${embedModel}`);
+      return localAi.embedding(embedModel);
+    }
+
+    const apiKey = openaiApiKey;
     const baseURL = config.baseUrl || this.getBaseUrlFromEnv('openai');
     this.logger.log(`Khởi tạo OpenAI Embedding Model: ${model}`);
     const openai = createOpenAI({

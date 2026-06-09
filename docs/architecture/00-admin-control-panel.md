@@ -230,12 +230,13 @@ interface ToolPermission {
 ### 4.3 User Management API
 
 ```
-GET    /api/admin/users              → List users (paginated)
-POST   /api/admin/users              → Create user
-PATCH  /api/admin/users/:id          → Update user
-DELETE /api/admin/users/:id          → Soft delete user
-GET    /api/admin/roles              → List roles
-POST   /api/admin/roles/:id/permissions → Set tool permissions for role
+GET    /api/admin/users                                   → List users (paginated)
+POST   /api/admin/users                                   → Create user
+PATCH  /api/admin/users/:id                               → Update user
+DELETE /api/admin/users/:id                               → Delete user (soft delete)
+GET    /api/admin/users/roles                             → List roles
+POST   /api/admin/users/roles/:roleId/permissions         → Set tool permissions for role
+GET    /api/admin/users/roles/:roleId/permissions         → Get tool permissions for role
 ```
 
 ---

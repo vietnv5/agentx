@@ -117,17 +117,22 @@ export function PermissionMatrix({
         <span className="text-xs font-semibold uppercase tracking-wider text-default-450 block">
           {t("users.matrix.newRule")}
         </span>
-        <TextField isRequired className="w-full" name="toolPattern">
+        <TextField
+          isRequired
+          className="w-full"
+          name="toolPattern"
+          value={newPattern}
+          onChange={onChangePattern}
+        >
           <Label className="text-default-500 text-xs font-semibold mb-1 block">
             {t("users.matrix.pattern")}
           </Label>
           <Input
             className="text-foreground"
             placeholder={t("users.matrix.patternPlaceholder")}
-            value={newPattern}
-            onChange={(e) => onChangePattern(e.target.value)}
           />
         </TextField>
+
         <div className="flex items-center justify-between pt-1">
           <div>
             <span className="text-xs font-semibold text-default-500 block mb-1">

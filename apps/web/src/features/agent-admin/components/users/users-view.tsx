@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { UserTable } from "./user-table";
 import { PermissionMatrix } from "./permission-matrix";
+import { UserForm } from "./user-form";
 
 interface Role {
   id: string;
@@ -39,6 +40,10 @@ export function UsersView() {
   const [newPattern, setNewPattern] = React.useState("");
   const [newAllowed, setNewAllowed] = React.useState(true);
 
+  // User CRUD Form State
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editingUser, setEditingUser] = React.useState<User | null>(null);
+
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -50,13 +55,14 @@ export function UsersView() {
 
       setUsers(usersData);
       setRoles(rolesData);
-      // Select the first role by default for matrix config
-      if (rolesData.length > 0 && !selectedRole) {
-        setSelectedRole(rolesData[0]);
-      } else if (selectedRole) {
-        const updated = rolesData.find((r: Role) => r.id === selectedRole.id);
-        setSelectedRole(updated || rolesData[0]);
-      }
+      
+      // Use functional state updater to avoid selectedRole dependency
+      setSelectedRole((current) => {
+        if (rolesData.length === 0) return null;
+        if (!current) return rolesData[0];
+        const updated = rolesData.find((r: Role) => r.id === current.id);
+        return updated || rolesData[0];
+      });
     } catch (err: any) {
       setError(
         err.response?.data?.message || t("users.alert.loadFailed"),
@@ -64,7 +70,7 @@ export function UsersView() {
     } finally {
       setLoading(false);
     }
-  }, [selectedRole, t]);
+  }, [t]);
 
   React.useEffect(() => {
     loadData();
@@ -121,6 +127,47 @@ export function UsersView() {
     }
   };
 
+  // User CRUD Handlers
+  const handleAddClick = () => {
+    setEditingUser(null);
+    setIsEditing(true);
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditingUser(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (payload: any) => {
+    try {
+      if (editingUser) {
+        await adminService.updateUser(editingUser.id, payload);
+      } else {
+        await adminService.createUser(payload);
+      }
+      setIsEditing(false);
+      setEditingUser(null);
+      loadData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || (editingUser ? t("users.alert.updateFailed") : t("users.alert.createFailed")));
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (!confirm(t("users.confirm.delete"))) return;
+    try {
+      await adminService.deleteUser(userId);
+      loadData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || t("users.alert.deleteFailed"));
+    }
+  };
+
   if (loading && users.length === 0) {
     return (
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
@@ -140,7 +187,7 @@ export function UsersView() {
           <Users className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
           {t("users.title")}
         </h1>
-        <p className="text-sm text-default-500">
+        <p className="text-sm text-default-550">
           {t("users.subtitle")}
         </p>
       </div>
@@ -152,6 +199,16 @@ export function UsersView() {
         </div>
       )}
 
+      {/* User CRUD Form */}
+      {isEditing && (
+        <UserForm
+          initialUser={editingUser}
+          roles={roles}
+          onCancel={handleCancel}
+          onSubmit={handleSubmit}
+        />
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* User Table (Left Spanning 2) */}
         <UserTable
@@ -159,6 +216,9 @@ export function UsersView() {
           users={users}
           onChangeRole={handleChangeRole}
           onToggleActive={handleToggleActive}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAddClick={handleAddClick}
         />
 
         {/* Permission Matrix (Right Spanning 1) */}
