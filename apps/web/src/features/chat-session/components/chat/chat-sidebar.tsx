@@ -176,16 +176,19 @@ export function ChatSidebar({
                 <div className="space-y-0.5 mt-1">
                   {adminRoutes.map((route) => {
                     const Icon = route.icon;
-                    const isActive = pathname === route.path || pathname.startsWith(route.path + "/");
+                    const isActive =
+                      route.path === "/admin"
+                        ? pathname === route.path
+                        : pathname === route.path || pathname.startsWith(route.path + "/");
 
                     return (
                       <Link
                         key={route.path}
                         href={route.path}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-200 cursor-pointer border ${
                           isActive
-                            ? "bg-default-250 text-foreground border border-default-300/50"
-                            : "text-default-500 hover:bg-default-100/50 hover:text-foreground"
+                            ? "bg-default-200 hover:bg-default-300/60 text-foreground dark:text-white border-default-300 shadow-sm font-bold"
+                            : "text-default-500 hover:bg-default-100 hover:text-foreground border-transparent font-medium"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -210,15 +213,16 @@ export function ChatSidebar({
                 </div>
               ) : (
                 filteredConversations.map((conv) => {
-                  const isActive = activeId === conv.id;
+                  const isChatRoute = pathname === "/chat" || pathname.startsWith("/chat/");
+                  const isActive = isChatRoute && activeId === conv.id;
 
                   return (
                     <div
                       key={conv.id}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border focus:outline-none ${
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs cursor-pointer transition-all border focus:outline-none ${
                         isActive
-                          ? "bg-default-200/80 text-foreground border border-default-300/50 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
-                          : "text-default-500 hover:bg-default-100/50 hover:text-foreground border-transparent"
+                          ? "bg-default-200 hover:bg-default-300/60 text-foreground dark:text-white border-default-300 shadow-[0_1px_3px_rgba(0,0,0,0.05)] font-bold"
+                          : "text-default-500 hover:bg-default-100 hover:text-foreground border-transparent font-medium"
                       } ${isStreaming ? "pointer-events-none opacity-50" : ""}`}
                       role="button"
                       tabIndex={0}
