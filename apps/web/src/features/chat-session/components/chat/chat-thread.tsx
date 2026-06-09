@@ -68,7 +68,9 @@ export function ChatThread({
           ))}
 
           {/* Real-time Streaming Response placeholder */}
-          {isStreaming && (streamingText || runningTool || completedTools.length > 0) && (
+          {isStreaming &&
+            (messages.length === 0 || messages[messages.length - 1].role !== "assistant") &&
+            (streamingText || runningTool || completedTools.length > 0) && (
             <div className="flex gap-3 max-w-[80%] min-w-0 mr-auto animate-fade-in">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/20 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <Bot className="h-4.5 w-4.5" />
