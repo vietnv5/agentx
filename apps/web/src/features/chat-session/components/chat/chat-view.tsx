@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { chatService } from "@/src/features/chat-session/services/chat.service";
 import { useChatStream } from "@/src/features/chat-session/hooks/useChatStream";
+import { useChatStore } from "@/src/features/chat-session/hooks/useChatStore";
 
-import { ChatSidebar } from "./chat-sidebar";
 import { ChatHeader } from "./chat-header";
 import { ChatThread } from "./chat-thread";
 import { ChatInput } from "./chat-input";
@@ -20,32 +21,21 @@ interface Message {
   createdAt: string;
 }
 
-interface Conversation {
-  id: string;
-  title: string;
-  updatedAt: string;
-}
-
 export default function ChatView() {
   const t = useTranslations();
-  const [conversations, setConversations] = React.useState<Conversation[]>([]);
-  const [activeId, setActiveId] = React.useState<string | null>(null);
-  const [messages, setMessages] = React.useState<Message[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [loadingConv, setLoadingConv] = React.useState(true);
+  const [messages, setMessages] = React.useState<Message[]>([]);
   const [loadingMsgs, setLoadingMsgs] = React.useState(false);
 
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("chat_sidebar_open");
-      return saved !== null ? saved === "true" : true;
-    }
-    return true;
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem("chat_sidebar_open", String(isSidebarOpen));
-  }, [isSidebarOpen]);
+  // Global Chat State
+  const conversations = useChatStore((state) => state.conversations);
+  const activeId = useChatStore((state) => state.activeId);
+  const setActiveId = useChatStore((state) => state.setActiveId);
+  const isSidebarOpen = useChatStore((state) => state.isSidebarOpen);
+  const toggleSidebar = useChatStore((state) => state.toggleSidebar);
+  const loadConversations = useChatStore((state) => state.loadConversations);
 
   // Hook Stream Logic
   const {
@@ -60,25 +50,26 @@ export default function ChatView() {
     decideApproval,
   } = useChatStream();
 
-  const loadConversations = React.useCallback(async (selectFirst = false) => {
-    try {
-      setLoadingConv(true);
-      const data = await chatService.getConversations();
-
-      setConversations(data);
-      if (selectFirst && data.length > 0) {
-        setActiveId(data[0].id);
-      }
-    } catch (err) {
-      console.error(t("chat.alert.loadHistoryFailed"), err);
-    } finally {
-      setLoadingConv(false);
-    }
-  }, [t]);
-
+  // Load conversations once if empty
   React.useEffect(() => {
-    loadConversations(true);
-  }, [loadConversations]);
+    if (conversations.length === 0) {
+      loadConversations();
+    }
+  }, [conversations.length, loadConversations]);
+
+  // Sync activeId with URL query params
+  React.useEffect(() => {
+    const idParam = searchParams.get("id");
+    if (idParam) {
+      if (activeId !== idParam) {
+        setActiveId(idParam);
+      }
+    } else if (conversations.length > 0) {
+      // Auto-select the first conversation if no id in URL
+      setActiveId(conversations[0].id);
+      router.push(`/chat?id=${conversations[0].id}`);
+    }
+  }, [searchParams, conversations, activeId, setActiveId, router]);
 
   const loadMessages = React.useCallback(
     async (id: string) => {
@@ -120,31 +111,6 @@ export default function ChatView() {
     }
   }, [activeId, loadMessages, setPendingApproval]);
 
-  const handleCreateConv = async () => {
-    try {
-      const data = await chatService.createConversation(
-        t("chat.history.tempTitle", { index: conversations.length + 1 }),
-      );
-
-      await loadConversations();
-      setActiveId(data.id);
-    } catch (err) {
-      alert(t("chat.alert.createFailed"));
-    }
-  };
-
-  const handleDeleteConv = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm(t("chat.confirm.delete"))) return;
-    try {
-      await chatService.deleteConversation(id);
-      if (activeId === id) setActiveId(null);
-      loadConversations();
-    } catch (err) {
-      alert(t("chat.alert.deleteFailed"));
-    }
-  };
-
   const handleSend = async (msgText: string) => {
     if (!activeId || isStreaming) return;
 
@@ -183,41 +149,27 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background font-sans relative">
-      <ChatSidebar
-        activeId={activeId}
-        conversations={conversations}
-        isStreaming={isStreaming}
-        loadingConv={loadingConv}
-        setActiveId={setActiveId}
-        onCreateConv={handleCreateConv}
-        onDeleteConv={handleDeleteConv}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+    <div className="flex-1 flex flex-col h-full bg-default-50/10 relative overflow-hidden font-sans">
+      <ChatHeader
+        routedAgentName={routedAgentName}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={toggleSidebar}
       />
 
-      <div className="flex-1 flex flex-col h-full bg-default-50/10 relative overflow-hidden">
-        <ChatHeader
-          routedAgentName={routedAgentName}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+      <ChatThread
+        activeId={activeId}
+        completedTools={completedTools}
+        isStreaming={isStreaming}
+        messages={messages}
+        pendingApproval={pendingApproval}
+        runningTool={runningTool}
+        streamingText={streamingText}
+        onDecideApproval={handleDecideApproval}
+      />
 
-        <ChatThread
-          activeId={activeId}
-          completedTools={completedTools}
-          isStreaming={isStreaming}
-          messages={messages}
-          pendingApproval={pendingApproval}
-          runningTool={runningTool}
-          streamingText={streamingText}
-          onDecideApproval={handleDecideApproval}
-        />
-
-        {activeId && !pendingApproval && (
-          <ChatInput isStreaming={isStreaming} onSend={handleSend} />
-        )}
-      </div>
+      {activeId && !pendingApproval && (
+        <ChatInput isStreaming={isStreaming} onSend={handleSend} />
+      )}
     </div>
   );
 }

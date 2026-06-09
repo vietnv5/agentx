@@ -17,10 +17,13 @@ export interface PendingApproval {
   description?: string;
 }
 
+import { useChatStore } from "./useChatStore";
+
 export function useChatStream() {
   const t = useTranslations();
   const { accessToken } = useAuthStore.getState();
-  const [isStreaming, setIsStreaming] = React.useState(false);
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const setIsStreaming = useChatStore((state) => state.setIsStreaming);
   const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(
     null,
   );

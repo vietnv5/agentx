@@ -1,27 +1,14 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  LayoutDashboard,
-  Bot,
-  Plug,
-  Users,
-  FileCode,
-  FolderOpen,
-  MessageSquare,
-  LogOut,
-  ShieldAlert,
-  User as UserIcon,
-} from "lucide-react";
-import clsx from "clsx";
+import { PanelLeftOpen } from "lucide-react";
+import { Button } from "@heroui/react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
-import { authService } from "@/src/features/auth/services/auth.service";
-import { ThemeSwitch } from "@/components/theme-switch";
-import { LanguageSwitch } from "@/components/language-switch";
+import { ChatSidebar } from "@/src/features/chat-session/components/chat/chat-sidebar";
+import { useChatStore } from "@/src/features/chat-session/hooks/useChatStore";
 
 export default function DashboardLayout({
   children,
@@ -30,8 +17,20 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const t = useTranslations();
+
+  // Global Chat State
+  const conversations = useChatStore((state) => state.conversations);
+  const activeId = useChatStore((state) => state.activeId);
+  const setActiveId = useChatStore((state) => state.setActiveId);
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const loadingConv = useChatStore((state) => state.loadingConv);
+  const isSidebarOpen = useChatStore((state) => state.isSidebarOpen);
+  const toggleSidebar = useChatStore((state) => state.toggleSidebar);
+  const loadConversations = useChatStore((state) => state.loadConversations);
+  const createConversation = useChatStore((state) => state.createConversation);
+  const deleteConversation = useChatStore((state) => state.deleteConversation);
 
   React.useEffect(() => {
     // Nếu chưa đăng nhập, chuyển hướng sang login
@@ -40,18 +39,11 @@ export default function DashboardLayout({
     }
   }, [isAuthenticated, router]);
 
-  const handleLogout = async () => {
-    try {
-      const refreshToken = useAuthStore.getState().refreshToken;
-
-      await authService.logout(refreshToken);
-    } catch (err) {
-      console.error("Lỗi khi đăng xuất trên server:", err);
-    } finally {
-      clearAuth();
-      router.push("/login");
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      loadConversations();
     }
-  };
+  }, [isAuthenticated, loadConversations]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -64,156 +56,78 @@ export default function DashboardLayout({
     );
   }
 
-  const isAdmin = user.role?.name === "ADMIN";
-
-  // Danh sách routes cho Admin
-  const adminRoutes = [
-    { name: t("nav.overview"), path: "/admin", icon: LayoutDashboard },
-    { name: t("nav.agentsBuilder"), path: "/admin/agents", icon: Bot },
-    { name: t("nav.mcpIntegrations"), path: "/admin/integrations", icon: Plug },
-    { name: t("nav.usersRoles"), path: "/admin/users", icon: Users },
-    { name: t("nav.knowledgeBase"), path: "/admin/knowledge", icon: FolderOpen },
-    { name: t("nav.auditLogs"), path: "/admin/audit", icon: FileCode },
-  ];
-
-  // Danh sách routes chung
-  const generalRoutes = [
-    { name: t("nav.playground"), path: "/chat", icon: MessageSquare },
-  ];
-
   const isChatRoute = pathname === "/chat" || pathname.startsWith("/chat/");
 
+  const handleSelectConversation = (id: string | null) => {
+    setActiveId(id);
+    if (id) {
+      router.push(`/chat?id=${id}`);
+    } else {
+      router.push("/chat");
+    }
+  };
+
+  const handleCreateConv = async () => {
+    try {
+      const nextIdx = conversations.length + 1;
+      const newId = await createConversation(t("chat.history.tempTitle", { index: nextIdx }));
+      router.push(`/chat?id=${newId}`);
+    } catch (err) {
+      alert(t("chat.alert.createFailed"));
+    }
+  };
+
+  const handleDeleteConv = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(t("chat.confirm.delete"))) return;
+    try {
+      await deleteConversation(id);
+      if (activeId === id) {
+        router.push("/chat");
+      }
+    } catch (err) {
+      alert(t("chat.alert.deleteFailed"));
+    }
+  };
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
-      {/* Sidebar - Glassmorphism style */}
-      {!isChatRoute && (
-        <aside className="flex w-64 flex-col border-r border-default-200/60 bg-default-50/40 backdrop-blur-md">
-          {/* Brand Header */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-default-200/40">
-            <Link className="flex items-center gap-2" href="/">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
-                AX
-              </div>
-              <span className="text-lg font-bold tracking-tight text-foreground">
-                {t("app.name")}
-              </span>
-            </Link>
-          </div>
-
-          {/* Navigation Section */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-7">
-            {/* General Section */}
-            <div className="space-y-2">
-              <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">
-                {t("nav.playground")}
-              </span>
-              <div className="space-y-1">
-                {generalRoutes.map((route) => {
-                  const Icon = route.icon;
-                  const isActive = pathname === route.path;
-
-                  return (
-                    <Link
-                      key={route.path}
-                      className={clsx(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
-                        isActive
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                          : "text-default-500 hover:bg-default-100/50 hover:text-foreground",
-                      )}
-                      href={route.path}
-                    >
-                      <Icon className="h-4.5 w-4.5" />
-                      {route.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Admin Control Section */}
-            {isAdmin && (
-              <div className="space-y-2">
-                <span className="px-3 text-xs font-semibold uppercase tracking-wider text-default-400">
-                  {t("nav.adminControl")}
-                </span>
-                <div className="space-y-1">
-                  {adminRoutes.map((route) => {
-                    const Icon = route.icon;
-                    const isActive =
-                      pathname === route.path ||
-                      pathname.startsWith(route.path + "/");
-
-                    return (
-                      <Link
-                        key={route.path}
-                        className={clsx(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
-                          isActive
-                            ? "bg-default-200/80 text-foreground border border-default-300/50"
-                            : "text-default-500 hover:bg-default-100/50 hover:text-foreground",
-                        )}
-                        href={route.path}
-                      >
-                        <Icon className="h-4.5 w-4.5" />
-                        {route.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Non-Admin Staff Warning */}
-            {!isAdmin && (
-              <div className="rounded-lg border border-yellow-500/10 bg-yellow-500/5 p-3 flex gap-2">
-                <ShieldAlert className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-                <div className="text-xs text-default-400">
-                  <span className="font-semibold text-yellow-500">
-                    {t("staffMode.title")}
-                  </span>
-                  <p className="mt-0.5 leading-relaxed">{t("staffMode.desc")}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Footer (User Info, Theme Switcher & Logout) */}
-          <div className="p-4 border-t border-default-200/40 bg-default-100/10">
-            <div className="flex items-center justify-between gap-3 mb-3 px-2">
-              <div className="flex items-center gap-2 overflow-hidden">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-default-200/60 text-default-700 border border-default-300/30">
-                  <UserIcon className="h-4 w-4" />
-                </div>
-                <div className="overflow-hidden">
-                  <p className="text-xs font-semibold truncate text-foreground">
-                    {user.name}
-                  </p>
-                  <p className="text-[10px] text-default-400 truncate">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <ThemeSwitch className="text-default-500 hover:text-foreground shrink-0" />
-                <span className="w-[1px] h-3 bg-default-300/60 mx-1" />
-                <LanguageSwitch />
-              </div>
-            </div>
-            <button
-              className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors cursor-pointer"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4.5 w-4.5" />
-              {t("logout")}
-            </button>
-          </div>
-        </aside>
-      )}
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans relative">
+      {/* Collapsible Chat-style Sidebar for all pages */}
+      <ChatSidebar
+        activeId={activeId}
+        conversations={conversations}
+        isStreaming={isStreaming}
+        loadingConv={loadingConv}
+        setActiveId={handleSelectConversation}
+        onCreateConv={handleCreateConv}
+        onDeleteConv={handleDeleteConv}
+        isOpen={isSidebarOpen}
+        onToggle={toggleSidebar}
+      />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-background">
-        {children}
+      <main className="flex-1 flex flex-col overflow-hidden bg-background relative">
+        {/* Generic Admin Top Header Bar when sidebar is collapsed (non-chat pages only) */}
+        {!isChatRoute && !isSidebarOpen && (
+          <div className="h-16 border-b border-default-200/60 px-6 flex items-center shrink-0 select-none bg-default-50/20 backdrop-blur-md animate-fade-in">
+            <Button
+              isIconOnly
+              className="cursor-pointer hover:bg-default-100"
+              size="sm"
+              variant="ghost"
+              onClick={toggleSidebar}
+            >
+              <PanelLeftOpen className="h-4.5 w-4.5 text-default-500" />
+            </Button>
+            <span className="ml-4 font-bold text-sm text-foreground tracking-tight">
+              AgentX Admin Console
+            </span>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {children}
+        </div>
       </main>
     </div>
   );
