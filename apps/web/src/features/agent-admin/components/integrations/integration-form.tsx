@@ -1,0 +1,289 @@
+"use client";
+
+import * as React from "react";
+import { X } from "lucide-react";
+import { Card, Button, Input, TextArea, TextField, Label } from "@heroui/react";
+import { useTranslations } from "next-intl";
+
+interface Integration {
+  id: string;
+  name: string;
+  description?: string;
+  transport: "sse" | "stdio";
+  endpoint?: string;
+  headers?: any;
+  command?: string;
+  args?: any;
+  env?: any;
+  authConfig?: any;
+  status: "active" | "inactive" | "error";
+  syncError?: string;
+  toolDefinitions: Array<{
+    id: string;
+    toolName: string;
+    description?: string;
+    inputSchema: any;
+    requiresApproval: boolean;
+  }>;
+}
+
+interface IntegrationFormProps {
+  initialIntegration: Integration | null;
+  onSubmit: (payload: any) => void;
+  onCancel: () => void;
+}
+
+export function IntegrationForm({
+  initialIntegration,
+  onSubmit,
+  onCancel,
+}: IntegrationFormProps) {
+  const t = useTranslations();
+
+  // Form State
+  const [formName, setFormName] = React.useState("");
+  const [formDesc, setFormDesc] = React.useState("");
+  const [formTransport, setFormTransport] = React.useState<"sse" | "stdio">("stdio");
+  const [formEndpoint, setFormEndpoint] = React.useState("");
+  const [formHeaders, setFormHeaders] = React.useState("{}");
+  const [formCommand, setFormCommand] = React.useState("");
+  const [formArgs, setFormArgs] = React.useState("[]");
+  const [formEnv, setFormEnv] = React.useState("{}");
+  const [formStatus, setFormStatus] = React.useState<
+    "active" | "inactive" | "error"
+  >("active");
+
+  React.useEffect(() => {
+    if (initialIntegration) {
+      setFormName(initialIntegration.name);
+      setFormDesc(initialIntegration.description || "");
+      setFormTransport(initialIntegration.transport);
+      setFormEndpoint(initialIntegration.endpoint || "");
+      setFormHeaders(JSON.stringify(initialIntegration.headers || {}, null, 2));
+      setFormCommand(initialIntegration.command || "");
+      setFormArgs(JSON.stringify(initialIntegration.args || [], null, 2));
+      setFormEnv(JSON.stringify(initialIntegration.env || {}, null, 2));
+      setFormStatus(initialIntegration.status);
+    } else {
+      setFormName("");
+      setFormDesc("");
+      setFormTransport("stdio");
+      setFormEndpoint("");
+      setFormHeaders("{}");
+      setFormCommand("");
+      setFormArgs("[]");
+      setFormEnv("{}");
+      setFormStatus("active");
+    }
+  }, [initialIntegration]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) return;
+
+    let parsedHeaders = {};
+    let parsedArgs = [];
+    let parsedEnv = {};
+
+    try {
+      if (formTransport === "sse") {
+        parsedHeaders = JSON.parse(formHeaders || "{}");
+      } else {
+        parsedArgs = JSON.parse(formArgs || "[]");
+        parsedEnv = JSON.parse(formEnv || "{}");
+      }
+    } catch (err) {
+      alert(t("integrations.alert.jsonInvalid"));
+      return;
+    }
+
+    onSubmit({
+      name: formName,
+      description: formDesc,
+      transport: formTransport,
+      endpoint: formTransport === "sse" ? formEndpoint : null,
+      headers: formTransport === "sse" ? parsedHeaders : null,
+      command: formTransport === "stdio" ? formCommand : null,
+      args: formTransport === "stdio" ? parsedArgs : null,
+      env: formTransport === "stdio" ? parsedEnv : null,
+      status: formStatus,
+    });
+  };
+
+  return (
+    <Card className="bg-content1 border border-default-150 p-6 rounded-xl">
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="flex items-center justify-between border-b border-default-150 pb-3">
+          <h2 className="text-lg font-bold text-foreground">
+            {initialIntegration
+              ? t("integrations.editor.titleEdit", { name: formName })
+              : t("integrations.editor.titleCreate")}
+          </h2>
+          <Button
+            isIconOnly
+            className="cursor-pointer"
+            size="sm"
+            variant="danger"
+            onClick={onCancel}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Left Side */}
+          <div className="space-y-4">
+            <TextField isRequired className="w-full" name="name">
+              <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                {t("integrations.editor.name")}
+              </Label>
+              <Input
+                className="text-foreground"
+                placeholder={t("integrations.editor.namePlaceholder")}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+              />
+            </TextField>
+
+            <TextField className="w-full" name="description">
+              <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                {t("integrations.editor.desc")}
+              </Label>
+              <TextArea
+                className="text-foreground"
+                placeholder={t("integrations.editor.descPlaceholder")}
+                rows={2}
+                value={formDesc}
+                onChange={(e) => setFormDesc(e.target.value)}
+              />
+            </TextField>
+
+            <div className="grid gap-4 grid-cols-2">
+              <div>
+                <span className="text-xs font-semibold text-default-500 block mb-1">
+                  {t("integrations.editor.transport")}
+                </span>
+                <select
+                  className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
+                  value={formTransport}
+                  onChange={(e) => setFormTransport(e.target.value as any)}
+                >
+                  <option value="stdio">
+                    {t("integrations.editor.transportStdio")}
+                  </option>
+                  <option value="sse">
+                    {t("integrations.editor.transportSse")}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-default-500 block mb-1">
+                  {t("integrations.editor.status")}
+                </span>
+                <select
+                  className="w-full bg-default-100 text-foreground border border-default-200 hover:border-default-300 focus:border-primary rounded-lg p-2.5 text-sm focus:outline-none"
+                  value={formStatus}
+                  onChange={(e) => setFormStatus(e.target.value as any)}
+                >
+                  <option value="active">
+                    {t("integrations.editor.statusActive")}
+                  </option>
+                  <option value="inactive">
+                    {t("integrations.editor.statusInactive")}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Transport Configs */}
+          <div className="space-y-4">
+            {formTransport === "sse" ? (
+              <div className="space-y-4">
+                <TextField isRequired className="w-full" name="endpoint">
+                  <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                    {t("integrations.editor.sseUrl")}
+                  </Label>
+                  <Input
+                    className="text-foreground"
+                    placeholder={t("integrations.editor.sseUrlPlaceholder")}
+                    value={formEndpoint}
+                    onChange={(e) => setFormEndpoint(e.target.value)}
+                  />
+                </TextField>
+                <TextField className="w-full" name="headers">
+                  <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                    {t("integrations.editor.headers")}
+                  </Label>
+                  <TextArea
+                    className="text-foreground font-mono text-xs"
+                    placeholder={t("integrations.editor.headersPlaceholder")}
+                    rows={4}
+                    value={formHeaders}
+                    onChange={(e) => setFormHeaders(e.target.value)}
+                  />
+                </TextField>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <TextField isRequired className="w-full" name="command">
+                  <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                    {t("integrations.editor.command")}
+                  </Label>
+                  <Input
+                    className="text-foreground"
+                    placeholder={t("integrations.editor.commandPlaceholder")}
+                    value={formCommand}
+                    onChange={(e) => setFormCommand(e.target.value)}
+                  />
+                </TextField>
+                <TextField className="w-full" name="args">
+                  <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                    {t("integrations.editor.args")}
+                  </Label>
+                  <TextArea
+                    className="text-foreground font-mono text-xs"
+                    placeholder={t("integrations.editor.argsPlaceholder")}
+                    rows={3}
+                    value={formArgs}
+                    onChange={(e) => setFormArgs(e.target.value)}
+                  />
+                </TextField>
+                <TextField className="w-full" name="env">
+                  <Label className="text-default-500 text-xs font-semibold mb-1 block">
+                    {t("integrations.editor.env")}
+                  </Label>
+                  <TextArea
+                    className="text-foreground font-mono text-xs"
+                    placeholder={t("integrations.editor.envPlaceholder")}
+                    rows={3}
+                    value={formEnv}
+                    onChange={(e) => setFormEnv(e.target.value)}
+                  />
+                </TextField>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-default-150">
+          <Button
+            className="cursor-pointer border border-default-250 text-default-500 hover:bg-default-100"
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+          >
+            {t("integrations.editor.cancel")}
+          </Button>
+          <Button
+            className="cursor-pointer font-bold"
+            type="submit"
+            variant="primary"
+          >
+            {t("integrations.editor.save")}
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}

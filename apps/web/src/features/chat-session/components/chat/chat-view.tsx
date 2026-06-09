@@ -64,6 +64,10 @@ export default function ChatView() {
     }
   }, [t]);
 
+  React.useEffect(() => {
+    loadConversations(true);
+  }, [loadConversations]);
+
   const loadMessages = React.useCallback(
     async (id: string) => {
       try {
@@ -94,10 +98,6 @@ export default function ChatView() {
     },
     [setPendingApproval, t],
   );
-
-  React.useEffect(() => {
-    loadConversations(true);
-  }, [loadConversations]);
 
   React.useEffect(() => {
     if (activeId) {

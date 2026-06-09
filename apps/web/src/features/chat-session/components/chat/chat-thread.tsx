@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 
 import { ChatMessageItem } from "./chat-message-item";
 import { ChatMarkdown } from "./chat-markdown";
-import { ToolLog, PendingApproval } from "../hooks/useChatStream";
+import { ToolLog, PendingApproval } from "../../hooks/useChatStream";
 
 interface Message {
   id: string;

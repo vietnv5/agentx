@@ -90,7 +90,7 @@ export function ChatSidebar({
           })
         )}
         {conversations.length === 0 && !loadingConv && (
-          <p className="text-center text-xs text-default-450 italic py-8">
+          <p className="text-center text-xs text-default-455 italic py-8">
             {t("chat.history.empty")}
           </p>
         )}

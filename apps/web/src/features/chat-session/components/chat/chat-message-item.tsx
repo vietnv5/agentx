@@ -77,7 +77,7 @@ export const ChatMessageItem = React.memo(({ msg, t }: ChatMessageItemProps) => 
                   <p className="text-foreground font-semibold">
                     {t("chat.mcp.called", { name: tCall.toolName || tCall.function?.name })}
                   </p>
-                  <p className="text-default-450">
+                  <p className="text-default-455">
                     {t("chat.mcp.args", {
                       args: JSON.stringify(tCall.args || tCall.function?.arguments),
                     })}
