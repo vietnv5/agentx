@@ -1,6 +1,7 @@
 {
   "save": "Save",
   "cancel": "Cancel",
+  "confirm": "Confirm",
   "loading": "Loading...",
   "logout": "Logout",
   "error.connection": "A connection error occurred. Please try again.",

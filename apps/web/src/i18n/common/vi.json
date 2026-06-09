@@ -1,6 +1,7 @@
 {
   "save": "Lưu",
   "cancel": "Huỷ",
+  "confirm": "Xác nhận",
   "loading": "Đang tải...",
   "logout": "Đăng xuất",
   "error.connection": "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.",

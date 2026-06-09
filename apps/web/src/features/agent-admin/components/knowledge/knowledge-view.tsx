@@ -9,6 +9,7 @@ import { adminService } from "@/src/features/agent-admin/services/admin.service"
 import { DocumentList } from "./document-list";
 import { DocumentUploader } from "./document-uploader";
 import { SearchSandbox } from "./search-sandbox";
+import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface Document {
   id: string;
@@ -28,6 +29,10 @@ export function KnowledgeView() {
 
   // Form Uploader State
   const [isUploading, setIsUploading] = React.useState(false);
+
+  // Delete Confirm Modal State
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [docToDeleteId, setDocToDeleteId] = React.useState<string | null>(null);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -79,18 +84,18 @@ export function KnowledgeView() {
     }
   };
 
-  const handleDeleteDoc = async (id: string) => {
-    if (
-      !confirm(
-        t("knowledge.confirm.delete"),
-      )
-    )
-      return;
+  const handleDeleteDoc = (id: string) => {
+    setDocToDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDeleteDoc = async () => {
+    if (!docToDeleteId) return;
     try {
-      await adminService.deleteKnowledge(id);
+      await adminService.deleteKnowledge(docToDeleteId);
       loadData();
     } catch (err: any) {
-      alert(t("knowledge.alert.deleteFailed"));
+      alert(err.response?.data?.message || t("knowledge.alert.deleteFailed"));
     }
   };
 
@@ -161,6 +166,15 @@ export function KnowledgeView() {
         {/* Semantic Search Sandbox (Right Spanning 1) */}
         <SearchSandbox onSearch={handleSearch} />
       </div>
+
+      {/* Delete Document Confirm Modal */}
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        title={t("knowledge.list.delete")}
+        description={t("knowledge.confirm.delete")}
+        onConfirm={confirmDeleteDoc}
+      />
     </div>
   );
 }

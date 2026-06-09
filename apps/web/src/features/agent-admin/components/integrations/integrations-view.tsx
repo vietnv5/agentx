@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { IntegrationForm } from "./integration-form";
 import { IntegrationCard } from "./integration-card";
+import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface ToolDefinition {
   id: string;
@@ -42,6 +43,10 @@ export default function IntegrationsView() {
   // Form State
   const [isEditing, setIsEditing] = React.useState(false);
   const [editingIntegration, setEditingIntegration] = React.useState<Integration | null>(null);
+
+  // Delete Confirm Modal State
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [integrationToDeleteId, setIntegrationToDeleteId] = React.useState<string | null>(null);
 
   // Connection Test State
   const [testingId, setTestingId] = React.useState<string | null>(null);
@@ -94,15 +99,15 @@ export default function IntegrationsView() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        t("integrations.confirm.delete"),
-      )
-    )
-      return;
+  const handleDelete = (id: string) => {
+    setIntegrationToDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDeleteIntegration = async () => {
+    if (!integrationToDeleteId) return;
     try {
-      await adminService.deleteIntegration(id);
+      await adminService.deleteIntegration(integrationToDeleteId);
       loadData();
     } catch (err: any) {
       alert(err.response?.data?.message || t("integrations.alert.deleteFailed"));
@@ -238,6 +243,15 @@ export default function IntegrationsView() {
           </div>
         )}
       </div>
+
+      {/* Delete Integration Confirm Modal */}
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        title={t("integrations.list.delete")}
+        description={t("integrations.confirm.delete")}
+        onConfirm={confirmDeleteIntegration}
+      />
     </div>
   );
 }

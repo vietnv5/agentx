@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { AgentForm } from "./agent-form";
 import { AgentCard } from "./agent-card";
+import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface Skill {
   name: string;
@@ -45,6 +46,10 @@ export default function AgentsView() {
   // Form State
   const [isEditing, setIsEditing] = React.useState(false);
   const [editingAgent, setEditingAgent] = React.useState<Agent | null>(null);
+
+  // Delete Confirm Modal State
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [agentToDeleteId, setAgentToDeleteId] = React.useState<string | null>(null);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -95,10 +100,15 @@ export default function AgentsView() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t("agents.confirm.delete"))) return;
+  const handleDelete = (id: string) => {
+    setAgentToDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDeleteAgent = async () => {
+    if (!agentToDeleteId) return;
     try {
-      await adminService.deleteAgent(id);
+      await adminService.deleteAgent(agentToDeleteId);
       loadData();
     } catch (err: any) {
       alert(err.response?.data?.message || t("agents.alert.deleteFailed"));
@@ -186,6 +196,15 @@ export default function AgentsView() {
           </div>
         )}
       </div>
+
+      {/* Delete Agent Confirm Modal */}
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        title={t("agents.list.delete")}
+        description={t("agents.confirm.delete")}
+        onConfirm={confirmDeleteAgent}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { adminService } from "@/src/features/agent-admin/services/admin.service"
 import { UserTable } from "./user-table";
 import { PermissionMatrix } from "./permission-matrix";
 import { UserForm } from "./user-form";
+import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface Role {
   id: string;
@@ -43,6 +44,10 @@ export function UsersView() {
   // User CRUD Form State
   const [isEditing, setIsEditing] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
+
+  // Delete Confirm Modal State
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [userToDeleteId, setUserToDeleteId] = React.useState<string | null>(null);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -159,9 +164,14 @@ export function UsersView() {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm(t("users.confirm.delete"))) return;
+    setUserToDeleteId(userId);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDeleteId) return;
     try {
-      await adminService.deleteUser(userId);
+      await adminService.deleteUser(userToDeleteId);
       loadData();
     } catch (err: any) {
       alert(err.response?.data?.message || t("users.alert.deleteFailed"));
@@ -234,6 +244,15 @@ export function UsersView() {
           onSelectRole={setSelectedRole}
         />
       </div>
+
+      {/* Delete User Confirm Modal */}
+      <ConfirmModal
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        title={t("users.delete")}
+        description={t("users.confirm.delete")}
+        onConfirm={confirmDeleteUser}
+      />
     </div>
   );
 }
