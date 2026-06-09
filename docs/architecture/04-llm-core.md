@@ -299,5 +299,37 @@ export class LlmService {
 
 ---
 
-*Last updated: 2026-06-06*  
-*Version: 0.2.0 — Simplified design for single-tenant / server-level configuration*
+## 6. Lưu ý quan trọng khi nâng cấp Vercel AI SDK (Gotchas)
+
+### 6.1 Thay đổi thuộc tính text trong dòng stream (`fullStream`)
+
+Khi sử dụng hàm `streamText` từ Vercel AI SDK để lấy dòng stream đầy đủ các sự kiện (`resultStream.fullStream`), có một sự thay đổi quan trọng về cấu trúc của phần tử chunk loại `'text-delta'` (xảy ra từ phiên bản SDK v5.0+):
+
+* **Trong SDK cũ (v4.0 trở xuống)**: Thuộc tính chứa nội dung chữ được đặt tên là `textDelta` (ví dụ: `chunk.textDelta`).
+* **Trong SDK trung gian (v4.x)**: Có thể sử dụng `delta` (ví dụ: `chunk.delta`).
+* **Trong SDK v5.0+**: Thuộc tính chứa nội dung chữ được cấu trúc lại và đặt tên đơn giản là **`text`** (ví dụ: `chunk.text`).
+
+#### Mẫu code xử lý an toàn tương thích đa phiên bản:
+
+Khi lặp qua `resultStream.fullStream` để đẩy token về client và tích lũy phản hồi đầy đủ của trợ lý, hãy sử dụng toán tử liên kết null (nullish coalescing) để kiểm tra tất cả các trường khả dụng:
+
+```typescript
+for await (const chunk of resultStream.fullStream) {
+  if (chunk.type === 'text-delta') {
+    // Tự động fallback giữa các phiên bản AI SDK (v4 và v5)
+    const text = chunk.textDelta ?? chunk.delta ?? chunk.text ?? '';
+    
+    assistantResponseText += text;
+    eventSubject.next({ event: 'token', data: text });
+  } else if (chunk.type === 'tool-call') {
+    toolCallsToExecute.push(chunk);
+  }
+}
+```
+
+Mẫu thiết kế này giúp hệ thống không bị lỗi trả về `undefined` hoặc chuỗi rỗng `""` khi thư viện `@ai-sdk/core` hoặc `ai` được nâng cấp trong tương lai.
+
+---
+
+*Last updated: 2026-06-10*  
+*Version: 0.2.1 — Added Vercel AI SDK v5.0+ stream text-delta gotcha notes*

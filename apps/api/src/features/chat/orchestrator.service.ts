@@ -371,8 +371,9 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
       for await (const chunk of resultStream.fullStream) {
         this.logger.log(`[ReAct Loop] Received chunk: ${JSON.stringify(chunk)}`);
         if (chunk.type === 'text-delta') {
-          assistantResponseText += chunk.textDelta;
-          eventSubject.next({ event: 'token', data: chunk.textDelta });
+          const text = chunk.textDelta ?? chunk.delta ?? chunk.text ?? '';
+          assistantResponseText += text;
+          eventSubject.next({ event: 'token', data: text });
         } else if (chunk.type === 'tool-call') {
           toolCallsToExecute.push(chunk);
         }
