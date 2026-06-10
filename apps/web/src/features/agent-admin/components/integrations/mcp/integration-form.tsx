@@ -9,7 +9,7 @@ interface Integration {
   id: string;
   name: string;
   description?: string;
-  transport: "sse" | "stdio";
+  transport: "sse" | "stdio" | "http";
   endpoint?: string;
   headers?: any;
   command?: string;
@@ -43,7 +43,7 @@ export function IntegrationForm({
   // Form State
   const [formName, setFormName] = React.useState("");
   const [formDesc, setFormDesc] = React.useState("");
-  const [formTransport, setFormTransport] = React.useState<"sse" | "stdio">("stdio");
+  const [formTransport, setFormTransport] = React.useState<"sse" | "stdio" | "http">("stdio");
   const [formEndpoint, setFormEndpoint] = React.useState("");
   const [formHeaders, setFormHeaders] = React.useState("{}");
   const [formCommand, setFormCommand] = React.useState("");
@@ -85,8 +85,10 @@ export function IntegrationForm({
     let parsedArgs = [];
     let parsedEnv = {};
 
+    const isHttpOrSse = formTransport === "sse" || formTransport === "http";
+
     try {
-      if (formTransport === "sse") {
+      if (isHttpOrSse) {
         parsedHeaders = JSON.parse(formHeaders || "{}");
       } else {
         parsedArgs = JSON.parse(formArgs || "[]");
@@ -101,14 +103,16 @@ export function IntegrationForm({
       name: formName,
       description: formDesc,
       transport: formTransport,
-      endpoint: formTransport === "sse" ? formEndpoint : null,
-      headers: formTransport === "sse" ? parsedHeaders : null,
+      endpoint: isHttpOrSse ? formEndpoint : null,
+      headers: isHttpOrSse ? parsedHeaders : null,
       command: formTransport === "stdio" ? formCommand : null,
       args: formTransport === "stdio" ? parsedArgs : null,
       env: formTransport === "stdio" ? parsedEnv : null,
       status: formStatus,
     });
   };
+
+  const isHttpOrSse = formTransport === "sse" || formTransport === "http";
 
   return (
     <Card className="bg-content1 border border-default-150 p-6 rounded-xl">
@@ -170,6 +174,9 @@ export function IntegrationForm({
                   <option value="sse">
                     {t("integrations.editor.transportSse")}
                   </option>
+                  <option value="http">
+                    {t("integrations.editor.transportHttp")}
+                  </option>
                 </select>
               </div>
               <div>
@@ -194,15 +201,15 @@ export function IntegrationForm({
 
           {/* Right Side - Transport Configs */}
           <div className="space-y-4">
-            {formTransport === "sse" ? (
+            {isHttpOrSse ? (
               <div className="space-y-4">
                 <TextField isRequired className="w-full" name="endpoint" value={formEndpoint} onChange={setFormEndpoint}>
                   <Label className="text-default-500 text-xs font-semibold mb-1 block">
-                    {t("integrations.editor.sseUrl")}
+                    {formTransport === "sse" ? t("integrations.editor.sseUrl") : t("integrations.editor.httpUrl")}
                   </Label>
                   <Input
                     className="text-foreground"
-                    placeholder={t("integrations.editor.sseUrlPlaceholder")}
+                    placeholder={formTransport === "sse" ? t("integrations.editor.sseUrlPlaceholder") : t("integrations.editor.httpUrlPlaceholder")}
                   />
                 </TextField>
                 <TextField className="w-full" name="headers" value={formHeaders} onChange={setFormHeaders}>

@@ -103,6 +103,8 @@
   "integrations.editor.status": "Trạng thái (Status)",
   "integrations.editor.sseUrl": "SSE Endpoint URL",
   "integrations.editor.sseUrlPlaceholder": "e.g. http://localhost:3001/sse",
+  "integrations.editor.httpUrl": "HTTP Endpoint URL",
+  "integrations.editor.httpUrlPlaceholder": "e.g. http://localhost:3001/mcp",
   "integrations.editor.headers": "Custom Headers (JSON)",
   "integrations.editor.headersPlaceholder": "e.g. {\"Authorization\": \"Bearer token\"}",
   "integrations.editor.command": "Lệnh chạy Command",
@@ -231,6 +233,7 @@
   "audit.list.tableAriaLabelLlm": "Bảng log LLM",
   "integrations.editor.transportStdio": "stdio (Lệnh chạy cục bộ)",
   "integrations.editor.transportSse": "sse (HTTP Server-Sent Events)",
+  "integrations.editor.transportHttp": "http (Stateless HTTP)",
   "integrations.editor.statusActive": "Hoạt động",
   "integrations.editor.statusInactive": "Ngừng hoạt động"
 }

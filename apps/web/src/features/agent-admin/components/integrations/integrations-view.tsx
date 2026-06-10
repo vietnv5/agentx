@@ -6,8 +6,8 @@ import { Button, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
-import { IntegrationForm } from "./integration-form";
-import { IntegrationCard } from "./integration-card";
+import { IntegrationForm } from "./mcp/integration-form";
+import { IntegrationCard } from "./mcp/integration-card";
 import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface ToolDefinition {
@@ -22,7 +22,7 @@ interface Integration {
   id: string;
   name: string;
   description?: string;
-  transport: "sse" | "stdio";
+  transport: "sse" | "stdio" | "http";
   endpoint?: string;
   headers?: any;
   command?: string;

@@ -26,7 +26,7 @@ interface Integration {
   id: string;
   name: string;
   description?: string;
-  transport: "sse" | "stdio";
+  transport: "sse" | "stdio" | "http";
   endpoint?: string;
   headers?: any;
   command?: string;
