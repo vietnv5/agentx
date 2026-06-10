@@ -30,12 +30,18 @@ export default function LoginView() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   // Nếu đã đăng nhập, chuyển hướng luôn
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isHydrated && isAuthenticated && user) {
       router.replace(user.role?.name === "ADMIN" ? "/admin" : "/chat");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isHydrated, isAuthenticated, user, router]);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 

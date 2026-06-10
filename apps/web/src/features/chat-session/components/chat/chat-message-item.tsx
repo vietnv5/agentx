@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bot, User as UserIcon, ShieldCheck } from "lucide-react";
+import { Bot, User as UserIcon, ShieldCheck, Paperclip } from "lucide-react";
 import { Card } from "@heroui/react";
 import { ChatMarkdown } from "./chat-markdown";
 
@@ -9,6 +9,7 @@ interface Message {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
   content: string;
+  attachments?: any[];
   routedAgentId?: string;
   metadata?: any;
   createdAt: string;
@@ -55,9 +56,37 @@ export const ChatMessageItem = React.memo(({ msg, t }: ChatMessageItemProps) => 
           }`}
         >
           {isUser ? (
-            <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+            <div className="whitespace-pre-wrap break-words">
+              {msg.content}
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {msg.attachments.map((file: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-1.5 bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/90 shadow-sm backdrop-blur-sm">
+                      <Paperclip className="w-3.5 h-3.5 opacity-80" />
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white truncate max-w-[150px]" title={file.name || file.filename}>
+                        {file.name || file.filename}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
-            <ChatMarkdown content={msg.content} />
+            <div className="flex flex-col gap-2">
+              <ChatMarkdown content={msg.content} />
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {msg.attachments.map((file: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-1.5 bg-default-100 border border-default-200 rounded-lg px-2 py-1.5 text-xs text-default-700 shadow-sm">
+                      <Paperclip className="w-3.5 h-3.5 text-default-500" />
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline truncate max-w-[150px]" title={file.name || file.filename}>
+                        {file.name || file.filename}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

@@ -36,6 +36,7 @@ export default function ChatView() {
   const isSidebarOpen = useChatStore((state) => state.isSidebarOpen);
   const toggleSidebar = useChatStore((state) => state.toggleSidebar);
   const loadConversations = useChatStore((state) => state.loadConversations);
+  const createConversation = useChatStore((state) => state.createConversation);
 
   // Hook Stream Logic
   const {
@@ -64,12 +65,12 @@ export default function ChatView() {
       if (activeId !== idParam) {
         setActiveId(idParam);
       }
-    } else if (conversations.length > 0) {
-      // Auto-select the first conversation if no id in URL
-      setActiveId(conversations[0].id);
-      router.push(`/chat?id=${conversations[0].id}`);
+    } else {
+      if (activeId !== null) {
+        setActiveId(null);
+      }
     }
-  }, [searchParams, conversations, activeId, setActiveId, router]);
+  }, [searchParams, activeId, setActiveId]);
 
   const loadMessages = React.useCallback(
     async (id: string) => {
@@ -111,25 +112,45 @@ export default function ChatView() {
     }
   }, [activeId, loadMessages, setPendingApproval]);
 
-  const handleSend = async (msgText: string) => {
-    if (!activeId || isStreaming) return;
+  const handleSend = async (msgText: string, attachments?: any[]) => {
+    if (isStreaming) return;
+
+    let targetId = activeId;
+
+    // Nếu chưa có hội thoại (đang ở màn New Chat), tạo nháp một hội thoại trước khi gửi tin nhắn
+    if (!targetId) {
+      try {
+        const nextIdx = conversations.length + 1;
+        targetId = await createConversation(t("chat.history.tempTitle", { index: nextIdx }));
+        setActiveId(targetId);
+        // Thay đổi URL để reflect đúng ID mới
+        router.replace(`/chat?id=${targetId}`);
+      } catch (err) {
+        alert(t("chat.alert.createFailed"));
+        return;
+      }
+    }
+
+    // Các file đã được upload ở bước chọn file, giờ chỉ cần lấy data attachments gửi đi
+    const uploadedAttachments = attachments || [];
 
     // Thêm tạm thời tin nhắn của user vào view local
     setMessages((prev) => [
       ...prev,
       {
-        id: "temp-user",
+        id: `temp-user-${Date.now()}`,
         role: "user",
         content: msgText,
+        metadata: {
+           attachments: uploadedAttachments
+        },
         createdAt: new Date().toISOString(),
       },
     ]);
 
-    await sendMessage(activeId, msgText, async () => {
+    await sendMessage(targetId, msgText, uploadedAttachments, async () => {
       // Done. Reload messages history from db to get final formatted items
-      if (activeId) {
-        await loadMessages(activeId);
-      }
+      await loadMessages(targetId!);
     });
   };
 
@@ -167,7 +188,7 @@ export default function ChatView() {
         onDecideApproval={handleDecideApproval}
       />
 
-      {activeId && !pendingApproval && (
+      {!pendingApproval && (
         <ChatInput isStreaming={isStreaming} onSend={handleSend} />
       )}
     </div>

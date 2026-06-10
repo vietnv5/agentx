@@ -13,6 +13,7 @@ export const integrationStatusEnum = pgEnum('integration_status', ['active', 'in
 export const toolExecStatusEnum = pgEnum('tool_exec_status', ['success', 'error', 'denied', 'timeout']);
 export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected', 'expired']);
 export const docStatusEnum = pgEnum('doc_status', ['processing', 'indexed', 'error']);
+export const storageProviderEnum = pgEnum('storage_provider', ['local', 's3']);
 
 // ─── Users & Roles ──────────────────────────────────────
 
@@ -149,11 +150,27 @@ export const messages = pgTable('messages', {
   routedAgentId: uuid('routed_agent_id').references(() => agents.id),
   tokenCount: integer('token_count'),
   metadata: jsonb('metadata').default('{}'),
+  attachments: jsonb('attachments').default('[]'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('idx_messages_conversation').on(table.conversationId),
   index('idx_messages_created').on(table.createdAt),
 ]);
+
+// ─── Files (Attachments) ────────────────────────────────
+
+export const files = pgTable('files', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  filename: varchar('filename', { length: 255 }).notNull(),
+  path: text('path').notNull(),
+  url: text('url').notNull(),
+  mimeType: varchar('mime_type', { length: 100 }),
+  sizeBytes: integer('size_bytes'),
+  provider: storageProviderEnum('provider').default('local').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Tool Executions ────────────────────────────────────
 
 export const toolExecutions = pgTable('tool_executions', {
   id: uuid('id').primaryKey().defaultRandom(),

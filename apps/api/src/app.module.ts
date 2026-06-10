@@ -12,6 +12,8 @@ import { IntegrationsModule } from './features/integrations/integrations.module'
 import { AuditModule } from './features/audit/audit.module';
 import { ChatModule } from './features/chat/chat.module';
 import { MemoryModule } from './features/memory/memory.module';
+import { UploadModule } from './features/upload/upload.module';
+import { VoiceModule } from './features/voice/voice.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { MemoryModule } from './features/memory/memory.module';
     AuditModule,
     ChatModule,
     MemoryModule,
+    UploadModule,
+    VoiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

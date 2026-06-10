@@ -58,11 +58,19 @@ export class ChatController {
     @Param('id') conversationId: string,
     @Query('content') content: string,
     @CurrentUser() user: any,
+    @Query('attachments') attachmentsStr?: string,
   ): Observable<MessageEvent> {
     const eventSubject = new Subject<ChatStreamEvent>();
 
+    let attachments = [];
+    if (attachmentsStr) {
+      try {
+        attachments = JSON.parse(attachmentsStr);
+      } catch (e) {}
+    }
+
     // Chạy xử lý hội thoại bất đồng bộ
-    this.orchestratorService.processMessage(conversationId, user.id, content, eventSubject);
+    this.orchestratorService.processMessage(conversationId, user.id, content, eventSubject, attachments);
 
     return eventSubject.asObservable().pipe(
       map((event) => ({

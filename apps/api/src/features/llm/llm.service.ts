@@ -27,13 +27,15 @@ export class LlmService {
     model,
     system,
     prompt,
+    messages,
     tools,
     config = {},
   }: {
     provider: string;
     model: string;
     system?: string;
-    prompt: string;
+    prompt?: string;
+    messages?: any[];
     tools?: Array<{ name: string; description: string; inputSchema: any }>;
     config?: any;
   }) {
@@ -55,7 +57,8 @@ export class LlmService {
       const response = await generateText({
         model: llmModel,
         system,
-        prompt,
+        prompt: messages ? undefined : prompt,
+        messages,
         tools: hasTools ? sdkTools : undefined,
       });
 
@@ -85,13 +88,15 @@ export class LlmService {
     model,
     system,
     prompt,
+    messages,
     tools,
     config = {},
   }: {
     provider: string;
     model: string;
     system?: string;
-    prompt: string;
+    prompt?: string;
+    messages?: any[];
     tools?: Array<{ name: string; description: string; inputSchema: any }>;
     config?: any;
   }): Promise<any> {
@@ -112,7 +117,8 @@ export class LlmService {
       return streamText({
         model: llmModel,
         system,
-        prompt,
+        prompt: messages ? undefined : prompt,
+        messages,
         tools: hasTools ? sdkTools : undefined,
       });
     } catch (error) {

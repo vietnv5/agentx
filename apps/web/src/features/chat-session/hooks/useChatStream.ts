@@ -129,11 +129,16 @@ export function useChatStream() {
   const sendMessage = async (
     activeId: string,
     content: string,
+    attachments: any[] = [],
     onComplete?: () => Promise<void>,
   ) => {
-    const url = `${
+    let url = `${
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
     }/api/chat/conversations/${activeId}/messages/stream?content=${encodeURIComponent(content)}`;
+
+    if (attachments.length > 0) {
+      url += `&attachments=${encodeURIComponent(JSON.stringify(attachments))}`;
+    }
 
     await readStream(url, onComplete);
   };

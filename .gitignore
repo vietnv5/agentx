@@ -4,3 +4,4 @@
 /.idea/
 /apps/api/.env
 /apps/web/.env
+/apps/api/uploads/

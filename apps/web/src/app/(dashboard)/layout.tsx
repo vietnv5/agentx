@@ -32,20 +32,27 @@ export default function DashboardLayout({
   const createConversation = useChatStore((state) => state.createConversation);
   const deleteConversation = useChatStore((state) => state.deleteConversation);
 
+  const [isHydrated, setIsHydrated] = React.useState(false);
+
   React.useEffect(() => {
-    // Nếu chưa đăng nhập, chuyển hướng sang login
-    if (!isAuthenticated) {
+    setIsHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    // Nếu chưa đăng nhập, chuyển hướng sang login (chỉ check sau khi hydrate xong)
+    if (isHydrated && !isAuthenticated) {
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (isHydrated && isAuthenticated) {
       loadConversations();
     }
-  }, [isAuthenticated, loadConversations]);
+  }, [isHydrated, isAuthenticated, loadConversations]);
 
-  if (!isAuthenticated || !user) {
+  // Loading state khi chưa hydrate hoặc chưa có user
+  if (!isHydrated || !isAuthenticated || !user) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
@@ -67,14 +74,9 @@ export default function DashboardLayout({
     }
   };
 
-  const handleCreateConv = async () => {
-    try {
-      const nextIdx = conversations.length + 1;
-      const newId = await createConversation(t("chat.history.tempTitle", { index: nextIdx }));
-      router.push(`/chat?id=${newId}`);
-    } catch (err) {
-      alert(t("chat.alert.createFailed"));
-    }
+  const handleCreateConv = () => {
+    setActiveId(null);
+    router.push("/chat");
   };
 
   const handleDeleteConv = async (id: string, e: React.MouseEvent) => {

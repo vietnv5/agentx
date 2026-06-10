@@ -15,6 +15,13 @@
       "when": 1781064593327,
       "tag": "0001_mixed_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781110772120,
+      "tag": "0002_famous_luke_cage",
+      "breakpoints": true
     }
   ]
 }

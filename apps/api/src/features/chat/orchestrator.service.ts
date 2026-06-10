@@ -6,6 +6,7 @@ import { DRIZZLE_PROVIDER } from '../../database/drizzle.provider';
 import * as schema from '../../database/schema';
 import { LlmService } from '../llm/llm.service';
 import { McpClientPool } from '../integrations/mcp/mcp-client.pool';
+import * as fs from 'fs';
 
 export interface ChatStreamEvent {
   event: 'agent_routing' | 'token' | 'tool_start' | 'tool_end' | 'tool_approval_required' | 'complete' | 'error';
@@ -28,6 +29,7 @@ export class OrchestratorService {
     userId: string,
     userMessageContent: string,
     eventSubject: Subject<ChatStreamEvent>,
+    attachments: any[] = [],
   ) {
     try {
       // 1. Lấy thông tin user và role để kiểm tra quyền
@@ -47,6 +49,7 @@ export class OrchestratorService {
           conversationId,
           role: 'user',
           content: userMessageContent,
+          attachments: attachments,
         })
         .returning();
 
@@ -360,7 +363,7 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
         provider: agent.llmProvider || 'openai',
         model: agent.llmModel || 'gpt-4o',
         system: agent.systemInstructions,
-        prompt: promptInput,
+        messages: promptInput,
         tools: formattedTools,
       });
 
@@ -447,8 +450,8 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
         ),
       });
 
-      // Duyệt qua từng tool call để thực thi
-      for (const call of toolCallsToExecute) {
+      // Duyệt qua từng tool call để thực thi đồng thời (Parallel execution)
+      const toolPromises = toolCallsToExecute.map(async (call) => {
         const toolName = call.toolName;
         const toolArgs = call.args;
 
@@ -466,44 +469,81 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
             errorMessage: 'Role permission denied',
           });
 
-          const [toolMsg] = await this.db
-            .insert(schema.messages)
-            .values({
-              conversationId,
-              role: 'tool',
-              content: JSON.stringify(obsError),
-              metadata: { toolCallId: call.toolCallId },
-            })
-            .returning();
-
-          currentHistory.push(assistantMsg);
-          currentHistory.push(toolMsg);
-          continue;
+          return { call, result: obsError, status: 'denied', toolDef: null };
         }
 
         // Tìm định nghĩa tool trong db
         const toolDef = allowedTools.find((t) => t.toolName === toolName);
         if (!toolDef) {
           const obsError = { error: `Không tìm thấy tool ${toolName} trong các tool được gán cho Agent` };
-          
-          const [toolMsg] = await this.db
-            .insert(schema.messages)
-            .values({
-              conversationId,
-              role: 'tool',
-              content: JSON.stringify(obsError),
-              metadata: { toolCallId: call.toolCallId },
-            })
-            .returning();
-
-          currentHistory.push(assistantMsg);
-          currentHistory.push(toolMsg);
-          continue;
+          return { call, result: obsError, status: 'error', toolDef: null };
         }
 
         // 2b. Kiểm tra xem tool có cần User phê duyệt hay không (Human-In-The-Loop)
         if (toolDef.requiresApproval) {
-          // Tạo Approval Request
+           return { call, requiresApproval: true, toolDef, toolArgs, toolName };
+        }
+
+        // 2c. Thực thi tool thông qua McpClientPool
+        eventSubject.next({
+          event: 'tool_start',
+          data: { toolName, args: toolArgs, toolCallId: call.toolCallId },
+        });
+
+        const start = Date.now();
+        let observation: any;
+        let execStatus: 'success' | 'error' = 'success';
+        try {
+          const result = await this.mcpPool.executeTool(toolDef.integrationId, toolName, toolArgs);
+          
+          // Truncate observation if it's too large to save token budget
+          const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
+          observation = resultStr.length > 3000 ? resultStr.substring(0, 3000) + '... [Truncated]' : result;
+
+          await this.db.insert(schema.toolExecutions).values({
+            messageId: assistantMsg.id,
+            toolDefinitionId: toolDef.id,
+            toolName,
+            input: toolArgs,
+            output: observation,
+            status: 'success',
+            durationMs: Date.now() - start,
+          });
+
+          eventSubject.next({
+            event: 'tool_end',
+            data: { toolName, output: observation, status: 'success', toolCallId: call.toolCallId },
+          });
+        } catch (err) {
+          observation = { error: err.message };
+          execStatus = 'error';
+
+          await this.db.insert(schema.toolExecutions).values({
+            messageId: assistantMsg.id,
+            toolDefinitionId: toolDef.id,
+            toolName,
+            input: toolArgs,
+            output: { error: err.message },
+            status: 'error',
+            errorMessage: err.message,
+            durationMs: Date.now() - start,
+          });
+
+          eventSubject.next({
+            event: 'tool_end',
+            data: { toolName, output: { error: err.message }, status: 'error', toolCallId: call.toolCallId },
+          });
+        }
+        
+        return { call, result: observation, status: execStatus, toolDef };
+      });
+
+      const executedTools = await Promise.all(toolPromises);
+
+      // Check if any tool required approval
+      const approvalRequiredTool = executedTools.find(t => t.requiresApproval);
+      if (approvalRequiredTool) {
+          const { toolName, toolArgs, toolDef } = approvalRequiredTool;
           const [req] = await this.db
             .insert(schema.approvalRequests)
             .values({
@@ -526,70 +566,25 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
             },
           });
 
-          // TẠM DỪNG: Dừng ReAct loop ở đây và đóng stream, đợi người dùng phê duyệt
+          // Dừng ReAct loop
           eventSubject.complete();
           return;
+      }
+
+      currentHistory.push(assistantMsg);
+      for (const t of executedTools) {
+        if (!t.requiresApproval) {
+            const [toolMsg] = await this.db
+              .insert(schema.messages)
+              .values({
+                conversationId,
+                role: 'tool',
+                content: typeof t.result === 'string' ? t.result : JSON.stringify(t.result),
+                metadata: { toolCallId: t.call.toolCallId },
+              })
+              .returning();
+            currentHistory.push(toolMsg);
         }
-
-        // 2c. Thực thi tool thông qua McpClientPool
-        eventSubject.next({
-          event: 'tool_start',
-          data: { toolName, args: toolArgs },
-        });
-
-        const start = Date.now();
-        let observation: any;
-        try {
-          const result = await this.mcpPool.executeTool(toolDef.integrationId, toolName, toolArgs);
-          observation = result;
-
-          await this.db.insert(schema.toolExecutions).values({
-            messageId: assistantMsg.id,
-            toolDefinitionId: toolDef.id,
-            toolName,
-            input: toolArgs,
-            output: result,
-            status: 'success',
-            durationMs: Date.now() - start,
-          });
-
-          eventSubject.next({
-            event: 'tool_end',
-            data: { toolName, output: result, status: 'success' },
-          });
-        } catch (err) {
-          observation = { error: err.message };
-
-          await this.db.insert(schema.toolExecutions).values({
-            messageId: assistantMsg.id,
-            toolDefinitionId: toolDef.id,
-            toolName,
-            input: toolArgs,
-            output: { error: err.message },
-            status: 'error',
-            errorMessage: err.message,
-            durationMs: Date.now() - start,
-          });
-
-          eventSubject.next({
-            event: 'tool_end',
-            data: { toolName, output: { error: err.message }, status: 'error' },
-          });
-        }
-
-        // Lưu tin nhắn observation của tool
-        const [toolMsg] = await this.db
-          .insert(schema.messages)
-          .values({
-            conversationId,
-            role: 'tool',
-            content: typeof observation === 'string' ? observation : JSON.stringify(observation),
-            metadata: { toolCallId: call.toolCallId },
-          })
-          .returning();
-
-        currentHistory.push(assistantMsg);
-        currentHistory.push(toolMsg);
       }
     }
 
@@ -598,18 +593,91 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
     eventSubject.complete();
   }
 
-  private formatHistoryForLlm(history: Array<typeof schema.messages.$inferSelect>): string {
-    // Chuyển đổi lịch sử tin nhắn thành một chuỗi prompt hoặc format phù hợp.
-    // Vì chúng ta dùng Vercel AI SDK Core (generateText/streamText), ta có thể truyền chuỗi hội thoại
-    // dạng text hoặc prompt rõ ràng.
-    return history
-      .map((msg) => {
-        if (msg.role === 'user') return `User: ${msg.content}`;
-        if (msg.role === 'assistant') return `Assistant: ${msg.content}`;
-        if (msg.role === 'tool') return `Tool Observation: ${msg.content}`;
-        return `${msg.role}: ${msg.content}`;
-      })
-      .join('\n\n');
+  private formatHistoryForLlm(history: Array<typeof schema.messages.$inferSelect>): any[] {
+    const formattedMessages: any[] = [];
+
+    for (const msg of history) {
+      if (msg.role === 'tool') {
+        formattedMessages.push({
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: msg.metadata?.toolCallId || 'unknown',
+              toolName: msg.metadata?.toolName || 'unknown',
+              result: msg.content,
+            },
+          ],
+        });
+        continue;
+      }
+
+      if (msg.role === 'assistant') {
+        const contentParts: any[] = [];
+        if (msg.content) {
+          contentParts.push({ type: 'text', text: msg.content });
+        }
+        if (msg.metadata?.toolCalls) {
+          msg.metadata.toolCalls.forEach((call: any) => {
+            contentParts.push(call);
+          });
+        }
+        formattedMessages.push({ role: 'assistant', content: contentParts.length > 0 ? contentParts : msg.content });
+        continue;
+      }
+
+      // User and system messages
+      if (msg.role === 'user' || msg.role === 'system') {
+        const contentParts: any[] = [];
+        if (msg.content) {
+          contentParts.push({ type: 'text', text: msg.content });
+        }
+
+        if (msg.attachments && Array.isArray(msg.attachments)) {
+          for (const att of msg.attachments) {
+            try {
+              if (att.type?.startsWith('image/')) {
+                // Đọc ảnh base64 nếu lưu ở dạng local
+                if (att.url.startsWith('/uploads/')) {
+                  const filePath = att.path || att.url.replace('/uploads/', 'uploads/');
+                  if (fs.existsSync(filePath)) {
+                    const fileData = fs.readFileSync(filePath);
+                    const base64Data = fileData.toString('base64');
+                    contentParts.push({ type: 'image', image: `data:${att.type};base64,${base64Data}` });
+                  }
+                } else {
+                  contentParts.push({ type: 'image', image: new URL(att.url) });
+                }
+              } else if (att.type?.startsWith('text/') || att.type === 'application/json' || att.name?.endsWith('.md') || att.name?.endsWith('.csv')) {
+                // Đọc text
+                let textContent = '';
+                if (att.url.startsWith('/uploads/')) {
+                  const filePath = att.path || att.url.replace('/uploads/', 'uploads/');
+                  if (fs.existsSync(filePath)) {
+                    textContent = fs.readFileSync(filePath, 'utf-8');
+                  }
+                }
+                if (textContent) {
+                  contentParts.push({
+                    type: 'text',
+                    text: `\n--- File: ${att.name} ---\n${textContent}\n--- End File ---\n`,
+                  });
+                }
+              }
+            } catch (err) {
+              this.logger.warn(`Lỗi khi đọc file đính kèm ${att.name}: ${err.message}`);
+            }
+          }
+        }
+
+        formattedMessages.push({
+          role: msg.role,
+          content: contentParts.length === 1 && contentParts[0].type === 'text' ? contentParts[0].text : contentParts,
+        });
+      }
+    }
+
+    return formattedMessages;
   }
 
   private isToolAllowed(toolName: string, permissions: Array<{ toolPattern: string; allowed: boolean }>): boolean {
