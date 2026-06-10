@@ -58,7 +58,7 @@ export class LlmService {
         model: llmModel,
         system,
         prompt: messages ? undefined : prompt,
-        messages,
+        messages: messages as any,
         tools: hasTools ? sdkTools : undefined,
       });
 
@@ -118,7 +118,7 @@ export class LlmService {
         model: llmModel,
         system,
         prompt: messages ? undefined : prompt,
-        messages,
+        messages: messages as any,
         tools: hasTools ? sdkTools : undefined,
       });
     } catch (error) {

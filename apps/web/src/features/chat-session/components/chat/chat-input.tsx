@@ -164,8 +164,8 @@ export function ChatInput({ isStreaming, onSend }: ChatInputProps) {
         <div className="flex-1 flex items-center bg-default-100 border border-default-200 rounded-2xl focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
            <Button
              isIconOnly
-             variant="light"
-             className="text-default-500 ml-1 cursor-pointer"
+             variant="ghost"
+             className="border-none text-default-500 ml-1 cursor-pointer"
              onClick={() => fileInputRef.current?.click()}
              isDisabled={isStreaming}
              type="button"
@@ -186,9 +186,8 @@ export function ChatInput({ isStreaming, onSend }: ChatInputProps) {
 
           <Button
              isIconOnly
-             variant="light"
-             color={isRecording ? "danger" : "default"}
-             className={`mr-1 cursor-pointer ${isRecording ? "text-danger" : "text-default-500"}`}
+             variant="ghost"
+             className={`border-none mr-1 cursor-pointer ${isRecording ? "text-danger bg-danger-50" : "text-default-500"}`}
              onClick={toggleRecording}
              isDisabled={isStreaming}
              type="button"

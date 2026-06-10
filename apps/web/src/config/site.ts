@@ -31,11 +31,7 @@ export const siteConfig = {
       labelKey: "nav.dashboard",
       href: "/dashboard",
     },
-    {
-      label: "Projects",
-      labelKey: "nav.projects",
-      href: "/projects",
-    },
+
     {
       label: "Team",
       labelKey: "nav.team",

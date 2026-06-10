@@ -53,11 +53,24 @@ export class OrchestratorService {
         })
         .returning();
 
+      // Cập nhật thời gian update của conversation
+      await this.db
+        .update(schema.conversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(schema.conversations.id, conversationId));
+
       // 3. Lấy lịch sử tin nhắn của cuộc hội thoại
       const history = await this.db.query.messages.findMany({
         where: eq(schema.messages.conversationId, conversationId),
         orderBy: (messages, { asc }) => [asc(messages.createdAt)],
       });
+
+      // Tự động sinh tiêu đề nếu đây là tin nhắn đầu tiên
+      if (history.length === 1) {
+        this.generateAndSetTitle(conversationId, userMessageContent).catch((err) =>
+          this.logger.error(`Lỗi sinh title tự động: ${err.message}`),
+        );
+      }
 
       // 4. Tìm Specialist Agent tương ứng thông qua Router Agent
       let targetAgent = await this.routeAgent(userMessageContent);
@@ -125,6 +138,12 @@ export class OrchestratorService {
           decidedAt: new Date(),
         })
         .where(eq(schema.approvalRequests.id, approvalId));
+
+      // Cập nhật thời gian update của conversation
+      await this.db
+        .update(schema.conversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(schema.conversations.id, approval.conversationId));
 
       let observation: any;
 
@@ -597,14 +616,15 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
     const formattedMessages: any[] = [];
 
     for (const msg of history) {
+      const meta = msg.metadata as any;
       if (msg.role === 'tool') {
         formattedMessages.push({
           role: 'tool',
           content: [
             {
               type: 'tool-result',
-              toolCallId: msg.metadata?.toolCallId || 'unknown',
-              toolName: msg.metadata?.toolName || 'unknown',
+              toolCallId: meta?.toolCallId || 'unknown',
+              toolName: meta?.toolName || 'unknown',
               result: msg.content,
             },
           ],
@@ -617,8 +637,8 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
         if (msg.content) {
           contentParts.push({ type: 'text', text: msg.content });
         }
-        if (msg.metadata?.toolCalls) {
-          msg.metadata.toolCalls.forEach((call: any) => {
+        if (meta?.toolCalls) {
+          meta.toolCalls.forEach((call: any) => {
             contentParts.push(call);
           });
         }
@@ -693,5 +713,34 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
       }
     }
     return allowed;
+  }
+
+  private async generateAndSetTitle(conversationId: string, content: string) {
+    try {
+      const provider = process.env.LLM_FAST_PROVIDER || 'openai';
+      const model = process.env.LLM_FAST_MODEL || 'gpt-4o-mini';
+
+      const prompt = `Tóm tắt nội dung sau thành một tiêu đề ngắn gọn (khoảng 3-6 từ) để làm tên cho cuộc trò chuyện. Không dùng ngoặc kép, không dùng các ký tự đặc biệt, không trả lời dài dòng. Nội dung: "${content}"`;
+      const result = await this.llmService.generate({
+        provider,
+        model,
+        prompt,
+      });
+
+      let title = result.text.trim();
+      // Loại bỏ ngoặc kép nếu LLM vẫn trả về
+      if (title.startsWith('"') && title.endsWith('"')) {
+        title = title.slice(1, -1);
+      }
+
+      await this.db
+        .update(schema.conversations)
+        .set({ title, updatedAt: new Date() })
+        .where(eq(schema.conversations.id, conversationId));
+      
+      this.logger.log(`Tự động đặt tên hội thoại ${conversationId} thành: ${title}`);
+    } catch (error) {
+      this.logger.error(`Không thể sinh title cho hội thoại ${conversationId}: ${error.message}`);
+    }
   }
 }
