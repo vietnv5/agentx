@@ -5,7 +5,7 @@ import { Subject } from 'rxjs';
 import { DRIZZLE_PROVIDER } from '../../database/drizzle.provider';
 import * as schema from '../../database/schema';
 import { LlmService } from '../llm/llm.service';
-import { McpClientPool } from '../integrations/mcp-client.pool';
+import { McpClientPool } from '../integrations/mcp/mcp-client.pool';
 
 export interface ChatStreamEvent {
   event: 'agent_routing' | 'token' | 'tool_start' | 'tool_end' | 'tool_approval_required' | 'complete' | 'error';

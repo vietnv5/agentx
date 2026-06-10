@@ -12,12 +12,12 @@ export class CreateIntegrationDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: 'stdio', enum: ['sse', 'stdio'], description: 'Phương thức giao tiếp (transport)' })
+  @ApiProperty({ example: 'stdio', enum: ['sse', 'stdio', 'http'], description: 'Phương thức giao tiếp (transport)' })
   @IsString()
-  @IsIn(['sse', 'stdio'])
-  transport: 'sse' | 'stdio';
+  @IsIn(['sse', 'stdio', 'http'])
+  transport: 'sse' | 'stdio' | 'http';
 
-  @ApiPropertyOptional({ example: 'http://localhost:3001/sse', description: 'SSE endpoint (nếu transport là sse)' })
+  @ApiPropertyOptional({ example: 'http://localhost:3001/sse', description: 'Endpoint URL (nếu transport là sse hoặc http)' })
   @IsString()
   @IsOptional()
   endpoint?: string;

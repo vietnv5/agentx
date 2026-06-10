@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { IntegrationsService } from './integrations.service';
 import { IntegrationsController } from './integrations.controller';
-import { McpClientPool } from './mcp-client.pool';
+import { McpModule } from './mcp/mcp.module';
 import { DatabaseModule } from '../../database/database.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, McpModule],
   controllers: [IntegrationsController],
-  providers: [IntegrationsService, McpClientPool],
-  exports: [IntegrationsService, McpClientPool],
+  providers: [IntegrationsService],
+  exports: [IntegrationsService, McpModule],
 })
 export class IntegrationsModule {}

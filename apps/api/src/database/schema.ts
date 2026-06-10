@@ -8,7 +8,7 @@ import { relations } from 'drizzle-orm';
 
 export const roleEnum = pgEnum('role_type', ['ADMIN', 'STAFF']);
 export const messageRoleEnum = pgEnum('message_role', ['user', 'assistant', 'system', 'tool']);
-export const transportEnum = pgEnum('transport_type', ['sse', 'stdio']);
+export const transportEnum = pgEnum('transport_type', ['sse', 'stdio', 'http']);
 export const integrationStatusEnum = pgEnum('integration_status', ['active', 'inactive', 'error']);
 export const toolExecStatusEnum = pgEnum('tool_exec_status', ['success', 'error', 'denied', 'timeout']);
 export const approvalStatusEnum = pgEnum('approval_status', ['pending', 'approved', 'rejected', 'expired']);

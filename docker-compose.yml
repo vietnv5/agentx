@@ -5,7 +5,7 @@ services:
     image: pgvector/pgvector:pg16
     container_name: agentx-postgres-dev
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: agentx_user
       POSTGRES_PASSWORD: agentx_secure_password
@@ -20,7 +20,7 @@ services:
     image: redis:7-alpine
     container_name: agentx-redis-dev
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata-dev:/data
     networks:

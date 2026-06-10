@@ -5,7 +5,7 @@ import { DRIZZLE_PROVIDER } from '../../database/drizzle.provider';
 import * as schema from '../../database/schema';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
-import { McpClientPool } from './mcp-client.pool';
+import { McpClientPool } from './mcp/mcp-client.pool';
 import { ConfigReloadService } from '../../redis/config-reload.service';
 
 @Injectable()

@@ -34,9 +34,10 @@ sequenceDiagram
 
 ## 2. `@ai-sdk/mcp` Client Implementation
 
-AgentX sử dụng thư viện `@ai-sdk/mcp` làm lớp nền kết nối. Hệ thống hỗ trợ 2 dạng transport chính theo đặc tả MCP:
+AgentX hỗ trợ 3 dạng transport chính theo đặc tả MCP và nhu cầu triển khai thực tế:
 *   **SSE (Server-Sent Events)**: Kết nối mạng qua giao thức HTTPS. Đây là **phương thức quan trọng nhất và được ưu tiên hàng đầu** cho môi trường doanh nghiệp (production), hỗ trợ hoàn hảo việc xác thực động theo từng người dùng (User-scoped Authentication) và kết nối an toàn tới các dịch vụ SaaS hoặc hệ thống nội bộ được triển khai độc lập.
 *   **stdio (Standard Input/Output)**: Chạy dòng lệnh hoặc script nội bộ trực tiếp trên cùng máy chủ dưới dạng tiến trình con. Phương thức này phù hợp nhất cho quá trình phát triển (local development) hoặc thực thi các công cụ tiện ích hạ tầng không yêu cầu ủy quyền động theo định danh của từng người dùng cuối.
+*   **http (HTTP Stateless / Serverless)**: Gửi request HTTP POST mang theo JSON-RPC payload không trạng thái. Đây là phương thức tối ưu cho môi trường **Serverless** (như Vercel Functions, AWS Lambda, Cloudflare Workers), giúp giảm thiểu chi phí tài nguyên và không phải duy trì connection pool hay persistent socket.
 
 ### 2.1 Cấu hình khởi tạo Client (Dynamic MCP Connection)
 
@@ -80,6 +81,17 @@ export class IntegrationManager {
             command: integration.command,
             args: integration.args || [],
             env: integration.env || {} // Truyền biến môi trường đặc thù
+          });
+        } else if (integration.transport === 'http') {
+          client = await createMCPClient({
+            transport: {
+              type: 'http',
+              url: integration.endpoint,
+              headers: {
+                'Authorization': `Bearer ${integration.apiKey}`,
+                ...integration.customHeaders
+              }
+            }
           });
         }
 

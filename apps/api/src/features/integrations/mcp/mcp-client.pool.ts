@@ -4,9 +4,10 @@ import { eq, inArray } from 'drizzle-orm';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { DRIZZLE_PROVIDER } from '../../database/drizzle.provider';
-import * as schema from '../../database/schema';
-import { ConfigReloadService } from '../../redis/config-reload.service';
+import { HttpClientTransport } from './http-client.transport';
+import { DRIZZLE_PROVIDER } from '../../../database/drizzle.provider';
+import * as schema from '../../../database/schema';
+import { ConfigReloadService } from '../../../redis/config-reload.service';
 
 @Injectable()
 export class McpClientPool implements OnModuleDestroy, OnModuleInit {
@@ -178,6 +179,13 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
         eventSourceInit: {
           headers: (integration.headers as Record<string, string>) || {},
         } as any,
+      });
+    } else if (integration.transport === 'http') {
+      if (!integration.endpoint) {
+        throw new Error('Lỗi cấu hình HTTP: Thiếu endpoint URL.');
+      }
+      transport = new HttpClientTransport(new URL(integration.endpoint), {
+        headers: (integration.headers as Record<string, string>) || {},
       });
     } else {
       throw new Error(`Chưa hỗ trợ transport: ${integration.transport}`);
