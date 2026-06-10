@@ -131,7 +131,11 @@ export class IntegrationsService {
   }
 
   async syncToolsById(id: string) {
-    await this.mcpPool.syncTools(id);
+    try {
+      await this.mcpPool.syncTools(id);
+    } catch (err) {
+      throw new BadRequestException(err.message || 'Lỗi khi đồng bộ tools');
+    }
     return this.findOne(id);
   }
 

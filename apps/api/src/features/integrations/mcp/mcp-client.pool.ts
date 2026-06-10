@@ -65,7 +65,11 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
     let connection: { client: Client; transport: any } | null = null;
     try {
       connection = await this.connect(integration);
-      const toolList = await connection.client.listTools();
+      const toolListPromise = connection.client.listTools();
+      const timeoutPromise = new Promise<{ tools: any[] }>((_, reject) =>
+        setTimeout(() => reject(new Error('Yêu cầu lấy danh sách tools bị quá giờ (10s)')), 10000),
+      );
+      const toolList = await Promise.race([toolListPromise, timeoutPromise]);
       return {
         success: true,
         tools: toolList.tools || [],
