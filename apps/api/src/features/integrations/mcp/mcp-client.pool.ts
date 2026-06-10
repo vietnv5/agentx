@@ -4,7 +4,6 @@ import { eq, inArray } from 'drizzle-orm';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { HttpClientTransport } from './http-client.transport';
 import { DRIZZLE_PROVIDER } from '../../../database/drizzle.provider';
 import * as schema from '../../../database/schema';
 import { ConfigReloadService } from '../../../redis/config-reload.service';
@@ -41,10 +40,58 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
       throw new Error(`MCP Integration ${integrationId} không tồn tại hoặc đang inactive.`);
     }
 
+    if (integration.transport === 'http') {
+      throw new Error('Không thể khởi tạo Client session cho kết nối stateless HTTP.');
+    }
+
     this.logger.log(`Đang thiết lập kết nối tới MCP Integration: ${integration.name}`);
     const { client, transport } = await this.connect(integration);
     this.activeClients.set(integrationId, { client, transport });
     return client;
+  }
+
+  private async fetchStatelessMcp(integration: typeof schema.integrations.$inferSelect, method: string, params?: any): Promise<any> {
+    if (!integration.endpoint) {
+      throw new Error('Lỗi cấu hình HTTP: Thiếu endpoint URL.');
+    }
+    const headers = (integration.headers as Record<string, string>) || {};
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    try {
+      const response = await fetch(integration.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method,
+          params,
+          id: Date.now(),
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(`MCP error ${data.error.code}: ${data.error.message}`);
+      }
+      
+      return data.result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   async closeClient(integrationId: string): Promise<void> {
@@ -62,6 +109,23 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
 
   async testConnection(integration: typeof schema.integrations.$inferSelect) {
     this.logger.log(`Kiểm tra kết nối thử tới MCP Server: ${integration.name}`);
+    
+    if (integration.transport === 'http') {
+      try {
+        const result = await this.fetchStatelessMcp(integration, 'tools/list');
+        return {
+          success: true,
+          tools: (result?.tools || []) as any[],
+        };
+      } catch (error) {
+        this.logger.error(`Kiểm tra kết nối MCP thất bại cho ${integration.name}: ${error.message}`);
+        return {
+          success: false,
+          error: error.message || 'Kết nối thất bại',
+        };
+      }
+    }
+
     let connection: { client: Client; transport: any } | null = null;
     try {
       connection = await this.connect(integration);
@@ -184,13 +248,6 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
           headers: (integration.headers as Record<string, string>) || {},
         } as any,
       });
-    } else if (integration.transport === 'http') {
-      if (!integration.endpoint) {
-        throw new Error('Lỗi cấu hình HTTP: Thiếu endpoint URL.');
-      }
-      transport = new HttpClientTransport(new URL(integration.endpoint), {
-        headers: (integration.headers as Record<string, string>) || {},
-      });
     } else {
       throw new Error(`Chưa hỗ trợ transport: ${integration.transport}`);
     }
@@ -216,6 +273,27 @@ export class McpClientPool implements OnModuleDestroy, OnModuleInit {
   }
 
   async executeTool(integrationId: string, toolName: string, args: Record<string, any>) {
+    const integration = await this.db.query.integrations.findFirst({
+      where: eq(schema.integrations.id, integrationId),
+    });
+
+    if (!integration || integration.status !== 'active') {
+      throw new Error(`MCP Integration ${integrationId} không tồn tại hoặc đang inactive.`);
+    }
+
+    if (integration.transport === 'http') {
+      try {
+        const response = await this.fetchStatelessMcp(integration, 'tools/call', {
+          name: toolName,
+          arguments: args,
+        });
+        return response;
+      } catch (error) {
+        this.logger.error(`Thực thi tool ${toolName} lỗi trên integration HTTP ${integrationId}: ${error.message}`);
+        throw error;
+      }
+    }
+
     const client = await this.getClient(integrationId);
     try {
       const response = await client.callTool({

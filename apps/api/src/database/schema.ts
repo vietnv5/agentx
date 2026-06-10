@@ -106,7 +106,7 @@ export const toolDefinitions = pgTable('tool_definitions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('idx_tool_defs_integration').on(table.integrationId),
-  uniqueIndex('idx_tool_defs_name_unique').on(table.toolName),
+  uniqueIndex('idx_tool_defs_name_unique').on(table.integrationId, table.toolName),
 ]);
 
 export const agentToolBindings = pgTable('agent_tool_bindings', {
