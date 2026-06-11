@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Modal, Button, Input, Checkbox, TextField, Label } from "@heroui/react";
+import { Modal, Button, Input, Switch, TextField, Label } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface Role {
@@ -160,10 +160,11 @@ export function UserForm({
                   {t("users.editor.active")}
                 </span>
                 <div className="flex h-[42px] items-center">
-                  <Checkbox
-                    isSelected={formIsActive}
-                    onChange={setFormIsActive}
-                  />
+                  <Switch isSelected={formIsActive} onChange={setFormIsActive}>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch>
                 </div>
               </div>
             </div>
