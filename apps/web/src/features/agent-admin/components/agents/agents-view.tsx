@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Bot, Plus, AlertCircle } from "lucide-react";
-import { Button, Spinner } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
@@ -92,11 +92,12 @@ export default function AgentsView() {
       } else {
         await adminService.createAgent(payload);
       }
+      toast.success(t("agents.alert.saveSuccess"));
       setEditingAgent(null);
       setIsEditing(false);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("agents.alert.saveFailed"));
+      toast.danger(err.response?.data?.message || t("agents.alert.saveFailed"));
     }
   };
 
@@ -109,9 +110,10 @@ export default function AgentsView() {
     if (!agentToDeleteId) return;
     try {
       await adminService.deleteAgent(agentToDeleteId);
+      toast.success(t("agents.alert.deleteSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("agents.alert.deleteFailed"));
+      toast.danger(err.response?.data?.message || t("agents.alert.deleteFailed"));
     }
   };
 

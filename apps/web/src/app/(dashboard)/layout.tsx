@@ -4,7 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PanelLeftOpen } from "lucide-react";
-import { Button } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
 import { ChatSidebar } from "@/src/features/chat-session/components/chat/chat-sidebar";
@@ -84,11 +84,12 @@ export default function DashboardLayout({
     if (!confirm(t("chat.confirm.delete"))) return;
     try {
       await deleteConversation(id);
+      toast.success(t("chat.alert.deleteSuccess"));
       if (activeId === id) {
         router.push("/chat");
       }
     } catch (err) {
-      alert(t("chat.alert.deleteFailed"));
+      toast.danger(t("chat.alert.deleteFailed"));
     }
   };
 

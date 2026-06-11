@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Modal, Button, Input, TextArea, TextField, Label } from "@heroui/react";
+import { Modal, Button, Input, TextArea, TextField, Label, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface Integration {
@@ -96,7 +96,7 @@ export function IntegrationForm({
         parsedEnv = JSON.parse(formEnv || "{}");
       }
     } catch (err) {
-      alert(t("integrations.alert.jsonInvalid"));
+      toast.danger(t("integrations.alert.jsonInvalid"));
       return;
     }
 

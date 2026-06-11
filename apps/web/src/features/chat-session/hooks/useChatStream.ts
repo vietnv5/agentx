@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
 import { useTranslations } from "next-intl";
+import { toast } from "@heroui/react";
 
 export interface ToolLog {
   toolName: string;
@@ -109,7 +110,7 @@ export function useChatStream() {
                   await onComplete();
                 }
               } else if (event === "error") {
-                alert(t("chat.stream.agentError", { error: data }));
+                toast.danger(t("chat.stream.agentError", { error: data }));
               }
             } catch (e) {
               // Parse error
@@ -118,7 +119,7 @@ export function useChatStream() {
         }
       }
     } catch (err: any) {
-      alert(t("chat.stream.connError", { error: err.message }));
+      toast.danger(t("chat.stream.connError", { error: err.message }));
     } finally {
       setIsStreaming(false);
       setRunningTool(null);

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Plug, Plus, AlertCircle } from "lucide-react";
-import { Button, Spinner } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -126,14 +126,16 @@ export default function IntegrationsView() {
     try {
       if (editingIntegration) {
         await adminService.updateIntegration(editingIntegration.id, payload);
+        toast.success(t("integrations.alert.saveSuccess"));
       } else {
         await adminService.createIntegration(payload);
+        toast.success(t("integrations.alert.saveSuccess"));
       }
       setEditingIntegration(null);
       setIsEditing(false);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("integrations.alert.saveFailed"));
+      toast.danger(err.response?.data?.message || t("integrations.alert.saveFailed"));
     }
   };
 
@@ -146,9 +148,10 @@ export default function IntegrationsView() {
     if (!integrationToDeleteId) return;
     try {
       await adminService.deleteIntegration(integrationToDeleteId);
+      toast.success(t("integrations.alert.deleteSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("integrations.alert.deleteFailed"));
+      toast.danger(err.response?.data?.message || t("integrations.alert.deleteFailed"));
     }
   };
 
@@ -177,10 +180,10 @@ export default function IntegrationsView() {
   const handleSyncTools = async (id: string) => {
     try {
       await adminService.syncIntegration(id);
-      alert(t("integrations.alert.syncSuccess"));
+      toast.success(t("integrations.alert.syncSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("integrations.alert.syncFailed"));
+      toast.danger(err.response?.data?.message || t("integrations.alert.syncFailed"));
     }
   };
 
@@ -190,9 +193,10 @@ export default function IntegrationsView() {
   ) => {
     try {
       await adminService.toggleToolApproval(toolId, !currentVal);
+      toast.success(t("integrations.alert.permissionSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("integrations.alert.permissionFailed"));
+      toast.danger(t("integrations.alert.permissionFailed"));
     }
   };
 
@@ -202,9 +206,10 @@ export default function IntegrationsView() {
   ) => {
     try {
       await adminService.toggleToolActive(toolId, !currentVal);
+      toast.success(t("integrations.alert.permissionSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("integrations.alert.permissionFailed"));
+      toast.danger(t("integrations.alert.permissionFailed"));
     }
   };
 

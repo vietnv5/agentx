@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
-import { Card, Button, Spinner, Input, TextField } from "@heroui/react";
+import { Card, Button, Spinner, Input, TextField, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface SearchResult {
@@ -31,7 +31,7 @@ export function SearchSandbox({ onSearch }: SearchSandboxProps) {
       const results = await onSearch(searchQuery);
       setSearchResults(results);
     } catch (err) {
-      alert(t("knowledge.alert.searchFailed"));
+      toast.danger(t("knowledge.alert.searchFailed"));
     } finally {
       setSearching(false);
     }

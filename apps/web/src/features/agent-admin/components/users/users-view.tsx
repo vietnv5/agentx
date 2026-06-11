@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Users, AlertCircle } from "lucide-react";
-import { Spinner } from "@heroui/react";
+import { Spinner, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 
@@ -86,9 +86,10 @@ export function UsersView() {
       await adminService.updateUser(user.id, {
         isActive: !user.isActive,
       });
+      toast.success(t("users.alert.updateStatusSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("users.alert.updateStatusFailed"));
+      toast.danger(t("users.alert.updateStatusFailed"));
     }
   };
 
@@ -97,9 +98,10 @@ export function UsersView() {
       await adminService.updateUser(user.id, {
         roleId,
       });
+      toast.success(t("users.alert.updateRoleSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("users.alert.updateRoleFailed"));
+      toast.danger(t("users.alert.updateRoleFailed"));
     }
   };
 
@@ -113,9 +115,10 @@ export function UsersView() {
         allowed: newAllowed,
       });
       setNewPattern("");
+      toast.success(t("users.alert.updatePermSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("users.alert.updatePermFailed"));
+      toast.danger(t("users.alert.updatePermFailed"));
     }
   };
 
@@ -126,9 +129,10 @@ export function UsersView() {
         toolPattern: pattern,
         allowed: false,
       });
+      toast.success(t("users.alert.deletePermSuccess"));
       loadData();
     } catch (err: any) {
-      alert(t("users.alert.deletePermFailed"));
+      toast.danger(t("users.alert.deletePermFailed"));
     }
   };
 
@@ -152,14 +156,16 @@ export function UsersView() {
     try {
       if (editingUser) {
         await adminService.updateUser(editingUser.id, payload);
+        toast.success(t("users.alert.updateSuccess"));
       } else {
         await adminService.createUser(payload);
+        toast.success(t("users.alert.createSuccess"));
       }
       setIsEditing(false);
       setEditingUser(null);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || (editingUser ? t("users.alert.updateFailed") : t("users.alert.createFailed")));
+      toast.danger(err.response?.data?.message || (editingUser ? t("users.alert.updateFailed") : t("users.alert.createFailed")));
     }
   };
 
@@ -172,9 +178,10 @@ export function UsersView() {
     if (!userToDeleteId) return;
     try {
       await adminService.deleteUser(userToDeleteId);
+      toast.success(t("users.alert.deleteSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("users.alert.deleteFailed"));
+      toast.danger(err.response?.data?.message || t("users.alert.deleteFailed"));
     }
   };
 

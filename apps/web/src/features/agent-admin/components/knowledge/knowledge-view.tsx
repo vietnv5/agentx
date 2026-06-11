@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { FolderOpen, Plus, AlertCircle } from "lucide-react";
-import { Button, Spinner } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
@@ -78,9 +78,10 @@ export function KnowledgeView() {
         filename: `${payload.title.toLowerCase().replace(/ /g, "-")}.md`,
       });
       setIsUploading(false);
+      toast.success(t("knowledge.alert.uploadSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("knowledge.alert.uploadFailed"));
+      toast.danger(err.response?.data?.message || t("knowledge.alert.uploadFailed"));
     }
   };
 
@@ -93,9 +94,10 @@ export function KnowledgeView() {
     if (!docToDeleteId) return;
     try {
       await adminService.deleteKnowledge(docToDeleteId);
+      toast.success(t("knowledge.alert.deleteSuccess"));
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.message || t("knowledge.alert.deleteFailed"));
+      toast.danger(err.response?.data?.message || t("knowledge.alert.deleteFailed"));
     }
   };
 

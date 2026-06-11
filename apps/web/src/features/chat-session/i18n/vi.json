@@ -25,6 +25,7 @@
   "chat.alert.loadMessagesFailed": "Không tải được tin nhắn",
   "chat.alert.createFailed": "Tạo hội thoại mới lỗi",
   "chat.alert.deleteFailed": "Xóa hội thoại lỗi",
+  "chat.alert.deleteSuccess": "Xóa hội thoại thành công!",
   "chat.confirm.delete": "Bạn có muốn xóa cuộc hội thoại này?",
   "chat.history.tempTitle": "Cuộc hội thoại #{index}",
   "chat.stream.initError": "Không thể khởi tạo luồng đọc.",

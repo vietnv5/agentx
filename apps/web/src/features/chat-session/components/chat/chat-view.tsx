@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "@heroui/react";
 
 import { chatService } from "@/src/features/chat-session/services/chat.service";
 import { useChatStream } from "@/src/features/chat-session/hooks/useChatStream";
@@ -126,7 +127,7 @@ export default function ChatView() {
         // Thay đổi URL để reflect đúng ID mới
         router.replace(`/chat?id=${targetId}`);
       } catch (err) {
-        alert(t("chat.alert.createFailed"));
+        toast.danger(t("chat.alert.createFailed"));
         return;
       }
     }
