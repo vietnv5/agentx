@@ -202,13 +202,12 @@ export default function IntegrationsView() {
       )}
 
       {/* Form Editor */}
-      {isEditing && (
-        <IntegrationForm
-          initialIntegration={editingIntegration}
-          onCancel={handleCancel}
-          onSubmit={handleSubmit}
-        />
-      )}
+      <IntegrationForm
+        isOpen={isEditing}
+        initialIntegration={editingIntegration}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+      />
 
       {/* Listing Integrations */}
       <div className="space-y-6">

@@ -210,14 +210,13 @@ export function UsersView() {
       )}
 
       {/* User CRUD Form */}
-      {isEditing && (
-        <UserForm
-          initialUser={editingUser}
-          roles={roles}
-          onCancel={handleCancel}
-          onSubmit={handleSubmit}
-        />
-      )}
+      <UserForm
+        isOpen={isEditing}
+        initialUser={editingUser}
+        roles={roles}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* User Table (Left Spanning 2) */}

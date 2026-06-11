@@ -159,14 +159,13 @@ export default function AgentsView() {
       )}
 
       {/* Editor Form Mode */}
-      {isEditing && (
-        <AgentForm
-          initialAgent={editingAgent}
-          tools={tools}
-          onCancel={handleCancel}
-          onSubmit={handleSubmit}
-        />
-      )}
+      <AgentForm
+        isOpen={isEditing}
+        initialAgent={editingAgent}
+        tools={tools}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+      />
 
       {/* Agents Listing Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -151,12 +151,11 @@ export function KnowledgeView() {
       )}
 
       {/* Form Editor */}
-      {isUploading && (
-        <DocumentUploader
-          onCancel={() => setIsUploading(false)}
-          onSubmit={handleUploadSubmit}
-        />
-      )}
+      <DocumentUploader
+        isOpen={isUploading}
+        onCancel={() => setIsUploading(false)}
+        onSubmit={handleUploadSubmit}
+      />
 
       {/* Grid: Left - Doc List, Right - Similarity Search Debugger */}
       <div className="grid gap-6 lg:grid-cols-3">

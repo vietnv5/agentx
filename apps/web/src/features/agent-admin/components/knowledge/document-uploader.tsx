@@ -1,16 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
-import { Card, Button, Input, TextArea, TextField, Label } from "@heroui/react";
+import { Modal, Button, Input, TextArea, TextField, Label } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface DocumentUploaderProps {
+  isOpen: boolean;
   onSubmit: (payload: { title: string; content: string; sourceType: string }) => Promise<void>;
   onCancel: () => void;
 }
 
-export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) {
+export function DocumentUploader({ isOpen, onSubmit, onCancel }: DocumentUploaderProps) {
   const t = useTranslations();
   const [formTitle, setFormTitle] = React.useState("");
   const [formContent, setFormContent] = React.useState("");
@@ -28,24 +28,16 @@ export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) 
   };
 
   return (
-    <Card className="bg-content1 border border-default-150 p-6 rounded-xl">
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="flex items-center justify-between border-b border-default-150 pb-3">
-          <h2 className="text-lg font-bold text-foreground">
-            {t("knowledge.editor.title")}
-          </h2>
-          <Button
-            isIconOnly
-            className="cursor-pointer"
-            size="sm"
-            variant="danger"
-            onClick={onCancel}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <div className="space-y-4">
+    <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => !open && onCancel()} variant="blur">
+      <Modal.Container size="xl" scroll="inside">
+        <Modal.Dialog>
+          <Modal.CloseTrigger />
+          <form className="w-full" onSubmit={handleSubmit}>
+            <Modal.Header className="flex flex-col gap-1 text-lg font-bold">
+              {t("knowledge.editor.title")}
+            </Modal.Header>
+            <Modal.Body className="pb-6">
+              <div className="space-y-4">
           <TextField
             isRequired
             className="w-full"
@@ -98,26 +90,28 @@ export function DocumentUploader({ onSubmit, onCancel }: DocumentUploaderProps) 
               rows={10}
             />
           </TextField>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-default-150">
-          <Button
-            className="cursor-pointer border border-default-250 text-default-500 hover:bg-default-100"
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-          >
-            {t("knowledge.editor.cancel")}
-          </Button>
-          <Button
-            className="cursor-pointer font-bold"
-            type="submit"
-            variant="primary"
-          >
-            {t("knowledge.editor.save")}
-          </Button>
-        </div>
-      </form>
-    </Card>
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                className="cursor-pointer border border-default-250 text-default-500 hover:bg-default-100"
+                type="button"
+                variant="ghost"
+                onPress={onCancel}
+              >
+                {t("knowledge.editor.cancel")}
+              </Button>
+              <Button
+                className="cursor-pointer font-bold"
+                type="submit"
+                variant="primary"
+              >
+                {t("knowledge.editor.save")}
+              </Button>
+            </Modal.Footer>
+          </form>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   );
 }

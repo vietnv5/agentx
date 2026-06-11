@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
-import { Card, Button, Input, TextArea, TextField, Label } from "@heroui/react";
+import { Modal, Button, Input, TextArea, TextField, Label } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface Integration {
@@ -28,12 +27,14 @@ interface Integration {
 }
 
 interface IntegrationFormProps {
+  isOpen: boolean;
   initialIntegration: Integration | null;
   onSubmit: (payload: any) => void;
   onCancel: () => void;
 }
 
 export function IntegrationForm({
+  isOpen,
   initialIntegration,
   onSubmit,
   onCancel,
@@ -115,26 +116,18 @@ export function IntegrationForm({
   const isHttpOrSse = formTransport === "sse" || formTransport === "http";
 
   return (
-    <Card className="bg-content1 border border-default-150 p-6 rounded-xl">
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="flex items-center justify-between border-b border-default-150 pb-3">
-          <h2 className="text-lg font-bold text-foreground">
-            {initialIntegration
-              ? t("integrations.editor.titleEdit", { name: formName })
-              : t("integrations.editor.titleCreate")}
-          </h2>
-          <Button
-            isIconOnly
-            className="cursor-pointer"
-            size="sm"
-            variant="danger"
-            onClick={onCancel}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
+    <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => !open && onCancel()} variant="blur">
+      <Modal.Container size="3xl" scroll="inside">
+        <Modal.Dialog>
+          <Modal.CloseTrigger />
+          <form className="w-full" onSubmit={handleSubmit}>
+            <Modal.Header className="flex flex-col gap-1 text-lg font-bold">
+              {initialIntegration
+                ? t("integrations.editor.titleEdit", { name: formName })
+                : t("integrations.editor.titleCreate")}
+            </Modal.Header>
+            <Modal.Body className="pb-6">
+              <div className="grid gap-6 md:grid-cols-2">
           {/* Left Side */}
           <div className="space-y-4">
             <TextField isRequired className="w-full" name="name" value={formName} onChange={setFormName}>
@@ -257,26 +250,28 @@ export function IntegrationForm({
               </div>
             )}
           </div>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-default-150">
-          <Button
-            className="cursor-pointer border border-default-250 text-default-500 hover:bg-default-100"
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-          >
-            {t("integrations.editor.cancel")}
-          </Button>
-          <Button
-            className="cursor-pointer font-bold"
-            type="submit"
-            variant="primary"
-          >
-            {t("integrations.editor.save")}
-          </Button>
-        </div>
-      </form>
-    </Card>
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                className="cursor-pointer border border-default-250 text-default-500 hover:bg-default-100"
+                type="button"
+                variant="ghost"
+                onPress={onCancel}
+              >
+                {t("integrations.editor.cancel")}
+              </Button>
+              <Button
+                className="cursor-pointer font-bold"
+                type="submit"
+                variant="primary"
+              >
+                {t("integrations.editor.save")}
+              </Button>
+            </Modal.Footer>
+          </form>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   );
 }
