@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { X, Plus } from "lucide-react";
-import { Modal, Button, Input, TextArea, Checkbox, TextField, Label } from "@heroui/react";
+import { X, Plus, Search } from "lucide-react";
+import { Modal, Button, Input, TextArea, Checkbox, Switch, TextField, Label, Divider } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 interface Skill {
@@ -59,10 +59,12 @@ export function AgentForm({
   const [formIsActive, setFormIsActive] = React.useState(true);
   const [formSkills, setFormSkills] = React.useState<Skill[]>([]);
   const [formSelectedTools, setFormSelectedTools] = React.useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   // Skill Form Helper
   const [newSkillName, setNewSkillName] = React.useState("");
   const [newSkillDesc, setNewSkillDesc] = React.useState("");
+  const [editSkillIndex, setEditSkillIndex] = React.useState<number | null>(null);
 
   // Populate from initialAgent
   React.useEffect(() => {
@@ -75,7 +77,7 @@ export function AgentForm({
       setFormIsRouter(initialAgent.isRouter);
       setFormMaxSteps(initialAgent.maxSteps || 10);
       setFormIsActive(initialAgent.isActive);
-      setFormSkills(initialAgent.skills || []);
+      setFormSkills((initialAgent.skills || []).filter(Boolean));
       setFormSelectedTools(
         initialAgent.toolBindings?.map((b) => b.toolDefinition.id) || [],
       );
@@ -93,18 +95,36 @@ export function AgentForm({
     }
   }, [initialAgent]);
 
-  const handleAddSkill = () => {
+  const handleAddOrUpdateSkill = () => {
     if (!newSkillName.trim()) return;
-    setFormSkills([
-      ...formSkills,
-      { name: newSkillName.trim(), description: newSkillDesc.trim() },
-    ]);
+    if (editSkillIndex !== null) {
+      const updatedSkills = [...formSkills];
+      updatedSkills[editSkillIndex] = { name: newSkillName.trim(), description: newSkillDesc.trim() };
+      setFormSkills(updatedSkills);
+      setEditSkillIndex(null);
+    } else {
+      setFormSkills([
+        ...formSkills,
+        { name: newSkillName.trim(), description: newSkillDesc.trim() },
+      ]);
+    }
     setNewSkillName("");
     setNewSkillDesc("");
   };
 
+  const handleEditSkill = (index: number) => {
+    setEditSkillIndex(index);
+    setNewSkillName(formSkills[index].name);
+    setNewSkillDesc(formSkills[index].description || "");
+  };
+
   const handleRemoveSkill = (index: number) => {
     setFormSkills(formSkills.filter((_, i) => i !== index));
+    if (editSkillIndex === index) {
+      setEditSkillIndex(null);
+      setNewSkillName("");
+      setNewSkillDesc("");
+    }
   };
 
   const handleToggleTool = (toolId: string) => {
@@ -112,6 +132,36 @@ export function AgentForm({
       setFormSelectedTools(formSelectedTools.filter((id) => id !== toolId));
     } else {
       setFormSelectedTools([...formSelectedTools, toolId]);
+    }
+  };
+
+  const groupedTools = React.useMemo(() => {
+    const lowerQuery = searchQuery.toLowerCase();
+    
+    const filteredTools = tools.filter(
+      (tool) =>
+        tool.toolName.toLowerCase().includes(lowerQuery) ||
+        (tool.description?.toLowerCase() || "").includes(lowerQuery) ||
+        (tool.integration.name.toLowerCase() || "").includes(lowerQuery)
+    );
+
+    return filteredTools.reduce((acc, tool) => {
+      const integrationName = tool.integration.name || "Uncategorized";
+      if (!acc[integrationName]) acc[integrationName] = [];
+      acc[integrationName].push(tool);
+      return acc;
+    }, {} as Record<string, ToolOption[]>);
+  }, [tools, searchQuery]);
+
+  const handleToggleIntegration = (integrationTools: ToolOption[]) => {
+    const toolIds = integrationTools.map((t) => t.id);
+    const allSelected = toolIds.every((id) => formSelectedTools.includes(id));
+
+    if (allSelected) {
+      setFormSelectedTools(formSelectedTools.filter((id) => !toolIds.includes(id)));
+    } else {
+      const newSelections = new Set([...formSelectedTools, ...toolIds]);
+      setFormSelectedTools(Array.from(newSelections));
     }
   };
 
@@ -128,7 +178,7 @@ export function AgentForm({
       isRouter: formIsRouter,
       maxSteps: formMaxSteps,
       isActive: formIsActive,
-      skills: formSkills,
+      skills: formSkills.filter(Boolean),
       toolIds: formSelectedTools,
     });
   };
@@ -165,7 +215,7 @@ export function AgentForm({
                     <TextArea
                       className="text-foreground"
                       placeholder={t("agents.editor.instructionsPlaceholder")}
-                      rows={6}
+                      rows={10}
                     />
                   </TextField>
 
@@ -215,20 +265,26 @@ export function AgentForm({
                         {t("agents.editor.active")}
                       </span>
                       <div className="flex h-[42px] items-center">
-                        <Checkbox
-                          isSelected={formIsActive}
-                          onChange={setFormIsActive}
-                        />
+                        <Switch isSelected={formIsActive} onChange={setFormIsActive}>
+                          <Switch.Control>
+                            <Switch.Thumb />
+                          </Switch.Control>
+                        </Switch>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex gap-6 pt-2">
-                    <Checkbox isSelected={formIsRouter} onChange={setFormIsRouter}>
-                      <Label className="text-sm font-medium text-default-600">
-                        {t("agents.editor.routerAgent")}
-                      </Label>
-                    </Checkbox>
+                    <Switch isSelected={formIsRouter} onChange={setFormIsRouter}>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                      <Switch.Content>
+                        <Label className="text-sm font-medium text-default-600 cursor-pointer">
+                          {t("agents.editor.routerAgent")}
+                        </Label>
+                      </Switch.Content>
+                    </Switch>
                   </div>
                 </div>
 
@@ -240,21 +296,36 @@ export function AgentForm({
                       {t("agents.editor.skills")}
                     </h3>
                     {/* Skill List */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-2">
                       {formSkills.map((skill, index) => (
-                        <span
+                        <div
                           key={index}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-default-100 text-foreground text-xs rounded-full border border-default-200"
+                          className="flex items-start justify-between gap-2 p-2 bg-default-100 rounded-lg border border-default-200"
                         >
-                          <span className="font-bold">{skill.name}</span>
-                          <button
-                            className="text-default-400 hover:text-danger cursor-pointer"
-                            type="button"
-                            onClick={() => handleRemoveSkill(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-xs text-foreground truncate">{skill.name}</p>
+                            {skill.description && (
+                              <p className="text-[10px] text-default-500 line-clamp-2 mt-0.5">{skill.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              className="text-default-400 hover:text-primary cursor-pointer p-1"
+                              type="button"
+                              onClick={() => handleEditSkill(index)}
+                              title={t("agents.editor.editSkill")}
+                            >
+                              <span className="text-[10px] uppercase font-bold">Edit</span>
+                            </button>
+                            <button
+                              className="text-default-400 hover:text-danger cursor-pointer p-1"
+                              type="button"
+                              onClick={() => handleRemoveSkill(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
                       ))}
                       {formSkills.length === 0 && (
                         <span className="text-xs text-default-400 italic">
@@ -286,64 +357,111 @@ export function AgentForm({
                         size="sm"
                         type="button"
                         variant="secondary"
-                        onClick={handleAddSkill}
+                        onClick={handleAddOrUpdateSkill}
                       >
-                        {t("agents.editor.addSkill")}
+                        {editSkillIndex !== null ? t("agents.editor.updateSkill") : t("agents.editor.addSkill")}
                       </Button>
                     </div>
                   </div>
 
                   {/* Tools Selection Section */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-default-500">
-                      {t("agents.editor.mcpTools")}
-                    </h3>
-                    <div className="max-h-[220px] overflow-y-auto border border-default-200 rounded-lg p-3 space-y-2.5 bg-default-50">
-                      {tools.map((tool) => {
-                        const isSelected = formSelectedTools.includes(tool.id);
-
-                        return (
-                          <div
-                            key={tool.id}
-                            className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border focus:outline-none ${isSelected
-                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                              : "hover:bg-default-100/60 border-transparent text-default-500"
-                              }`}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => handleToggleTool(tool.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                handleToggleTool(tool.id);
-                              }
-                            }}
-                          >
-                            <Checkbox
-                              className="pointer-events-none mt-0.5"
-                              isSelected={isSelected}
-                            />
-                            <div>
-                              <p
-                                className={`text-xs font-semibold ${isSelected
-                                  ? "text-emerald-600 dark:text-emerald-450"
-                                  : "text-foreground"
-                                  }`}
-                              >
-                                {tool.toolName}
-                              </p>
-                              <p className="text-[10px] text-default-400 truncate max-w-[280px]">
-                                {tool.description || t("agents.editor.noDesc")} (
-                                {tool.integration.name})
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {tools.length === 0 && (
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold uppercase tracking-wider text-default-500">
+                        {t("agents.editor.mcpTools")}
+                      </h3>
+                      <div className="w-1/2">
+                        <Input
+                          classNames={{
+                            inputWrapper: "bg-default-100",
+                          }}
+                          placeholder={t("agents.editor.searchToolsPlaceholder")}
+                          size="sm"
+                          startContent={<Search className="text-default-400 h-4 w-4" />}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-[260px] overflow-y-auto border border-default-200 rounded-lg p-3 space-y-4 bg-default-50">
+                      {Object.keys(groupedTools).length === 0 ? (
                         <p className="text-xs text-default-400 italic text-center py-4">
                           {t("agents.editor.noMcpTools")}
                         </p>
+                      ) : (
+                        Object.entries(groupedTools).map(([integrationName, groupTools]) => {
+                          const toolIds = groupTools.map((t) => t.id);
+                          const selectedCount = toolIds.filter((id) => formSelectedTools.includes(id)).length;
+                          const allSelected = selectedCount === groupTools.length && groupTools.length > 0;
+                          const isIndeterminate = selectedCount > 0 && selectedCount < groupTools.length;
+
+                          return (
+                            <div key={integrationName} className="space-y-1.5">
+                              {/* Integration Header */}
+                              <div 
+                                className="flex items-center gap-2.5 p-1.5 rounded hover:bg-default-100/60 cursor-pointer"
+                                onClick={() => handleToggleIntegration(groupTools)}
+                              >
+                                <Checkbox
+                                  className="pointer-events-none mt-0"
+                                  isIndeterminate={isIndeterminate}
+                                  isSelected={allSelected}
+                                  size="sm"
+                                />
+                                <span className="text-xs font-bold text-foreground uppercase tracking-wide">
+                                  {integrationName}
+                                </span>
+                                <span className="text-[10px] text-default-400 font-medium">
+                                  ({selectedCount}/{groupTools.length})
+                                </span>
+                              </div>
+                              
+                              {/* Tools List */}
+                              <div className="pl-6 space-y-1">
+                                {groupTools.map((tool) => {
+                                  const isSelected = formSelectedTools.includes(tool.id);
+
+                                  return (
+                                    <div
+                                      key={tool.id}
+                                      className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border focus:outline-none ${isSelected
+                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                        : "hover:bg-default-100/60 border-transparent text-default-500"
+                                        }`}
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={() => handleToggleTool(tool.id)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          handleToggleTool(tool.id);
+                                        }
+                                      }}
+                                    >
+                                      <Checkbox
+                                        className="pointer-events-none mt-0.5"
+                                        isSelected={isSelected}
+                                      />
+                                      <div>
+                                        <p
+                                          className={`text-xs font-semibold ${isSelected
+                                            ? "text-emerald-600 dark:text-emerald-450"
+                                            : "text-foreground"
+                                            }`}
+                                        >
+                                          {tool.toolName}
+                                        </p>
+                                        <p className="text-[10px] text-default-400 truncate max-w-[260px]">
+                                          {tool.description || t("agents.editor.noDesc")}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
