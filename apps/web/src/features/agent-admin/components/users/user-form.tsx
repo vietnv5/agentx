@@ -79,8 +79,8 @@ export function UserForm({
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => !open && onCancel()} variant="blur">
-      <Modal.Container size="2xl" scroll="inside">
-        <Modal.Dialog>
+      <Modal.Container size="lg" scroll="inside">
+        <Modal.Dialog className="w-full sm:!max-w-7xl h-auto">
           <Modal.CloseTrigger />
           <form className="w-full" onSubmit={handleSubmit}>
             <Modal.Header className="flex flex-col gap-1 text-base font-bold">

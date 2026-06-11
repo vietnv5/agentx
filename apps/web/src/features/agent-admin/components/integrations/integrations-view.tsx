@@ -5,9 +5,12 @@ import { Plug, Plus, AlertCircle } from "lucide-react";
 import { Button, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { IntegrationForm } from "./mcp/integration-form";
 import { IntegrationCard } from "./mcp/integration-card";
+import { IntegrationDetail } from "./mcp/integration-detail";
 import { ConfirmModal } from "@/src/components/confirm-modal";
 
 interface ToolDefinition {
@@ -16,6 +19,7 @@ interface ToolDefinition {
   description?: string;
   inputSchema: any;
   requiresApproval: boolean;
+  isActive?: boolean;
 }
 
 interface Integration {
@@ -36,6 +40,8 @@ interface Integration {
 
 export default function IntegrationsView() {
   const t = useTranslations();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [integrations, setIntegrations] = React.useState<Integration[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -43,6 +49,38 @@ export default function IntegrationsView() {
   // Form State
   const [isEditing, setIsEditing] = React.useState(false);
   const [editingIntegration, setEditingIntegration] = React.useState<Integration | null>(null);
+
+  // Detail View State
+  const [selectedIntegrationId, setSelectedIntegrationId] = React.useState<string | null>(null);
+
+  // Sync selected ID with URL search param
+  React.useEffect(() => {
+    const idParam = searchParams.get("id");
+    if (idParam) {
+      if (selectedIntegrationId !== idParam) {
+        setSelectedIntegrationId(idParam);
+      }
+    } else {
+      if (selectedIntegrationId !== null) {
+        setSelectedIntegrationId(null);
+      }
+    }
+  }, [searchParams, selectedIntegrationId]);
+
+  const handleSelectIntegration = (id: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (id) {
+      params.set("id", id);
+    } else {
+      params.delete("id");
+    }
+    const newSearch = params.toString();
+    router.push(newSearch ? `/admin/integrations?${newSearch}` : `/admin/integrations`);
+  };
+
+  const selectedIntegration = React.useMemo(() => {
+    return integrations.find((i) => i.id === selectedIntegrationId) || null;
+  }, [integrations, selectedIntegrationId]);
 
   // Delete Confirm Modal State
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -158,6 +196,18 @@ export default function IntegrationsView() {
     }
   };
 
+  const handleToggleToolActive = async (
+    toolId: string,
+    currentVal: boolean,
+  ) => {
+    try {
+      await adminService.toggleToolActive(toolId, !currentVal);
+      loadData();
+    } catch (err: any) {
+      alert(t("integrations.alert.permissionFailed"));
+    }
+  };
+
   if (loading && integrations.length === 0) {
     return (
       <div className="flex flex-1 flex-col gap-3 items-center justify-center bg-background">
@@ -165,6 +215,19 @@ export default function IntegrationsView() {
         <span className="text-default-500 text-sm">
           {t("integrations.loading")}
         </span>
+      </div>
+    );
+  }
+
+  if (selectedIntegration) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 font-sans">
+        <IntegrationDetail
+          integration={selectedIntegration}
+          onBack={() => handleSelectIntegration(null)}
+          onToggleToolApproval={handleToggleToolApproval}
+          onToggleToolActive={handleToggleToolActive}
+        />
       </div>
     );
   }
@@ -221,7 +284,7 @@ export default function IntegrationsView() {
             onEdit={handleEdit}
             onSyncTools={handleSyncTools}
             onTestConnection={handleTestConnection}
-            onToggleToolApproval={handleToggleToolApproval}
+            onSelect={(integration) => handleSelectIntegration(integration.id)}
           />
         ))}
 

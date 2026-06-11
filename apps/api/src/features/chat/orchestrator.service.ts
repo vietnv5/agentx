@@ -357,7 +357,9 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
       with: { toolDefinition: true },
     });
 
-    const allowedTools = bindings.map((b) => b.toolDefinition);
+    const allowedTools = bindings
+      .map((b) => b.toolDefinition)
+      .filter((t) => t.isActive);
 
     // Lấy danh sách tool permissions của role để kiểm tra quyền
     const rolePermissions = await this.db.query.toolPermissions.findMany({

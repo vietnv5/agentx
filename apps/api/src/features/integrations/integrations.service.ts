@@ -165,4 +165,23 @@ export class IntegrationsService {
       where: eq(schema.toolDefinitions.id, toolId),
     });
   }
+
+  async updateToolActive(toolId: string, isActive: boolean) {
+    const tool = await this.db.query.toolDefinitions.findFirst({
+      where: eq(schema.toolDefinitions.id, toolId),
+    });
+
+    if (!tool) {
+      throw new NotFoundException(`Không tìm thấy Tool Definition ID: ${toolId}`);
+    }
+
+    await this.db
+      .update(schema.toolDefinitions)
+      .set({ isActive })
+      .where(eq(schema.toolDefinitions.id, toolId));
+
+    return this.db.query.toolDefinitions.findFirst({
+      where: eq(schema.toolDefinitions.id, toolId),
+    });
+  }
 }

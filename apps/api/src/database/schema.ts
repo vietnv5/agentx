@@ -103,6 +103,7 @@ export const toolDefinitions = pgTable('tool_definitions', {
   description: text('description'),
   inputSchema: jsonb('input_schema').default('{}').notNull(),
   requiresApproval: boolean('requires_approval').default(false).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('idx_tool_defs_integration').on(table.integrationId),

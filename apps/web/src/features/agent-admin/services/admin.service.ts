@@ -127,6 +127,20 @@ export const adminService = {
   },
 
   /**
+   * Bật/Tắt trạng thái hoạt động (Active/Inactive) của tool
+   */
+  async toggleToolActive(toolId: string, isActive: boolean) {
+    const response = await apiClient.patch(
+      `/api/admin/integrations/tools/${toolId}/active`,
+      {
+        isActive,
+      },
+    );
+
+    return response.data;
+  },
+
+  /**
    * Lấy danh sách Users
    */
   async getUsers() {

@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { IntegrationsService } from './integrations.service';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
+import { UpdateToolActiveDto } from './dto/update-tool-active.dto';
+import { UpdateToolApprovalDto } from './dto/update-tool-approval.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -76,8 +78,18 @@ export class IntegrationsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Cập nhật trạng thái thành công' })
   updateToolApproval(
     @Param('toolId') toolId: string,
-    @Body('requiresApproval', ParseBoolPipe) requiresApproval: boolean,
+    @Body() dto: UpdateToolApprovalDto,
   ) {
-    return this.integrationsService.updateToolApproval(toolId, requiresApproval);
+    return this.integrationsService.updateToolApproval(toolId, dto.requiresApproval);
+  }
+
+  @Patch('tools/:toolId/active')
+  @ApiOperation({ summary: 'Bật/Tắt trạng thái hoạt động (Active/Inactive) của Tool' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Cập nhật trạng thái thành công' })
+  updateToolActive(
+    @Param('toolId') toolId: string,
+    @Body() dto: UpdateToolActiveDto,
+  ) {
+    return this.integrationsService.updateToolActive(toolId, dto.isActive);
   }
 }
