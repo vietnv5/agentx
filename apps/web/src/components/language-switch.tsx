@@ -1,13 +1,9 @@
-"use client";
-
-import React from "react";
 import { Dropdown } from "@heroui/react";
-import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export function LanguageSwitch({ className }: { className?: string }) {
-  const currentLocale = useLocale();
-  const router = useRouter();
+  const { i18n } = useTranslation();
+  const currentLocale = i18n.language;
 
   const handleLocaleChange = (key: string | number) => {
     const locale = String(key);
@@ -15,8 +11,8 @@ export function LanguageSwitch({ className }: { className?: string }) {
     // Lưu locale vào cookie NEXT_LOCALE
     document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; SameSite=Lax`;
 
-    // Refresh trang để cập nhật lại i18n
-    router.refresh();
+    // Cập nhật i18n language trực tiếp
+    i18n.changeLanguage(locale);
   };
 
   const languages = [

@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { RefreshCw, AlertTriangle } from "lucide-react";
 import { Button, Spinner } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { MetricCards } from "./metric-cards";
@@ -28,7 +27,7 @@ interface Stats {
 }
 
 export default function OverviewView() {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [stats, setStats] = React.useState<Stats | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

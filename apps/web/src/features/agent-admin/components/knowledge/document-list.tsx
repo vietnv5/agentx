@@ -1,13 +1,12 @@
-"use client";
 
-import * as React from "react";
+
 import { BookOpen, Trash2, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import {
   Card,
   Button,
   Table,
 } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Document {
   id: string;
@@ -25,7 +24,7 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ documents, onDelete }: DocumentListProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="lg:col-span-2 bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">

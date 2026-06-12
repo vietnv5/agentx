@@ -1,12 +1,11 @@
-"use client";
 
-import * as React from "react";
+
 import { Cpu } from "lucide-react";
 import {
   Card,
   Table,
 } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface LlmUsageLog {
   id: string;
@@ -28,7 +27,7 @@ interface LlmUsageTableProps {
 }
 
 export function LlmUsageTable({ logs, locale }: LlmUsageTableProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">

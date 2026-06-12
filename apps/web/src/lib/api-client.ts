@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuthStore } from "../features/auth/auth-store";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
   withCredentials: true, // Gửi/nhận cookie HttpOnly (refreshToken) từ API server
 });
 
@@ -67,7 +67,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = useAuthStore.getState().refreshToken;
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/refresh`,
+          `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/auth/refresh`,
           { refreshToken },
           {
             headers: {

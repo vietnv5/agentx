@@ -1,17 +1,16 @@
-"use client";
 
 import { useState } from "react";
 import { Kbd, Link, TextField, InputGroup } from "@heroui/react";
-import NextLink from "next/link";
+import { Link as NextLink } from "react-router";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GithubIcon, SearchIcon, Logo } from "@/components/icons";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 export const Navbar = () => {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const searchInput = (
@@ -35,7 +34,7 @@ export const Navbar = () => {
     <nav className="sticky top-0 z-40 w-full border-b border-separator bg-background/70 backdrop-blur-lg">
       <header className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-4">
-          <NextLink className="flex items-center gap-1" href="/">
+          <NextLink className="flex items-center gap-1" to="/">
             <Logo />
             <p className="font-bold text-inherit">AgentX</p>
           </NextLink>
@@ -47,7 +46,7 @@ export const Navbar = () => {
                     "text-foreground hover:text-accent transition-colors",
                     "data-[active=true]:text-accent data-[active=true]:font-medium",
                   )}
-                  href={item.href}
+                  to={item.href}
                 >
                   {t(item.labelKey)}
                 </NextLink>
@@ -67,12 +66,12 @@ export const Navbar = () => {
           </Link>
           <ThemeSwitch />
           <div className="hidden lg:flex">{searchInput}</div>
-          <Link
+          <NextLink
             className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
-            href="/login"
+            to="/login"
           >
             {t("nav.login")}
-          </Link>
+          </NextLink>
         </div>
 
         <div className="flex sm:hidden items-center gap-2">
@@ -85,12 +84,12 @@ export const Navbar = () => {
             <GithubIcon className="text-muted" />
           </Link>
           <ThemeSwitch />
-          <Link
+          <NextLink
             className="text-xs font-semibold px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors mr-1"
-            href="/login"
+            to="/login"
           >
             {t("nav.login")}
-          </Link>
+          </NextLink>
           <button
             aria-expanded={isMenuOpen}
             aria-label="Toggle menu"

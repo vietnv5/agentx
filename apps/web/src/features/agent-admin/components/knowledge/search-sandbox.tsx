@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { Search } from "lucide-react";
 import { Card, Button, Spinner, Input, TextField, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface SearchResult {
   id: string;
@@ -17,7 +16,7 @@ interface SearchSandboxProps {
 }
 
 export function SearchSandbox({ onSearch }: SearchSandboxProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
   const [searching, setSearching] = React.useState(false);

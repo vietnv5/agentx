@@ -1,4 +1,3 @@
-"use client";
 
 import * as React from "react";
 import { ArrowLeft, Lock, Unlock, Search, Check, X, ChevronDown } from "lucide-react";
@@ -11,7 +10,7 @@ import {
   Switch,
   cn,
 } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ToolDefinition {
   id: string;
@@ -42,7 +41,7 @@ export function IntegrationDetail({
   onToggleToolApproval,
   onToggleToolActive,
 }: IntegrationDetailProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [selectedKeys, setSelectedKeys] = React.useState<any>(new Set());
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isUpdating, setIsUpdating] = React.useState(false);

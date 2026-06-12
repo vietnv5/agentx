@@ -1,9 +1,8 @@
-"use client";
 
-import * as React from "react";
+
 import { DollarSign, Activity, AlertTriangle, Cpu } from "lucide-react";
 import { Card } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface MetricCardsProps {
   past24hCost: number;
@@ -26,7 +25,7 @@ export function MetricCards({
   agentCount,
   integrationCount,
 }: MetricCardsProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

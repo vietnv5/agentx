@@ -1,12 +1,11 @@
-"use client";
 
-import * as React from "react";
+
 import { Activity } from "lucide-react";
 import {
   Card,
   Table,
 } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ToolExecution {
   id: string;
@@ -25,7 +24,7 @@ interface ToolAuditTableProps {
 }
 
 export function ToolAuditTable({ logs, locale }: ToolAuditTableProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">

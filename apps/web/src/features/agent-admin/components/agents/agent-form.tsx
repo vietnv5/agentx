@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
-import { X, Plus, Search } from "lucide-react";
-import { Modal, Button, Input, TextArea, Checkbox, Switch, TextField, Label, Divider } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { X, Search } from "lucide-react";
+import { Modal, Button, Input, TextArea, Checkbox, Switch, TextField, Label, InputGroup } from "@heroui/react";
+import { useTranslation } from "react-i18next";
 
 interface Skill {
   name: string;
@@ -46,7 +45,7 @@ export function AgentForm({
   onSubmit,
   onCancel,
 }: AgentFormProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   // Form State
   const [formName, setFormName] = React.useState("");
@@ -371,16 +370,17 @@ export function AgentForm({
                         {t("agents.editor.mcpTools")}
                       </h3>
                       <div className="w-1/2">
-                        <Input
-                          classNames={{
-                            inputWrapper: "bg-default-100",
-                          }}
-                          placeholder={t("agents.editor.searchToolsPlaceholder")}
-                          size="sm"
-                          startContent={<Search className="text-default-400 h-4 w-4" />}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                        <InputGroup>
+                          <InputGroup.Prefix>
+                            <Search className="text-default-400 h-4 w-4" />
+                          </InputGroup.Prefix>
+                          <InputGroup.Input
+                            className="bg-default-100 text-sm w-full"
+                            placeholder={t("agents.editor.searchToolsPlaceholder")}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </InputGroup>
                       </div>
                     </div>
                     <div className="max-h-[260px] overflow-y-auto border border-default-200 rounded-lg p-3 space-y-4 bg-default-50">
@@ -406,7 +406,6 @@ export function AgentForm({
                                   className="pointer-events-none mt-0"
                                   isIndeterminate={isIndeterminate}
                                   isSelected={allSelected}
-                                  size="sm"
                                 />
                                 <span className="text-xs font-bold text-foreground uppercase tracking-wide">
                                   {integrationName}

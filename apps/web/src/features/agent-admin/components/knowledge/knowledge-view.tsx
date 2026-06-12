@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { FolderOpen, Plus, AlertCircle } from "lucide-react";
 import { Button, Spinner, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { DocumentList } from "./document-list";
@@ -22,7 +21,7 @@ interface Document {
 }
 
 export function KnowledgeView() {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [documents, setDocuments] = React.useState<Document[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);

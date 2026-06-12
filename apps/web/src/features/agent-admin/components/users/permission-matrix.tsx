@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { Shield, Lock, Unlock, Trash2, Plus } from "lucide-react";
 import { Card, Button, Input, TextField, Label } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Role {
   id: string;
@@ -35,7 +34,7 @@ export function PermissionMatrix({
   onAddPermission,
   onDeletePermission,
 }: PermissionMatrixProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">

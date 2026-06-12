@@ -1,14 +1,13 @@
-"use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { useLocation } from "react-router";
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 import { Navbar } from "@/components/navbar";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const t = useTranslations();
+  const { pathname } = useLocation();
+  const { t } = useTranslation();
   // Nếu là route chat hoặc admin, trả về children thô để page layout tự kiểm soát (full-screen)
   const isDashboard =
     pathname.startsWith("/chat") ||

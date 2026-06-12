@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { Bot, Plus, AlertCircle } from "lucide-react";
 import { Button, Spinner, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { AgentForm } from "./agent-form";
@@ -37,7 +36,7 @@ interface ToolOption {
 }
 
 export default function AgentsView() {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [agents, setAgents] = React.useState<Agent[]>([]);
   const [tools, setTools] = React.useState<ToolOption[]>([]);
   const [loading, setLoading] = React.useState(true);

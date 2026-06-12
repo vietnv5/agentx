@@ -1,18 +1,13 @@
-"use client";
 
-import * as React from "react";
 import {
   Plug,
   Play,
   RefreshCw,
   Edit2,
   Trash2,
-  CheckCircle,
-  XCircle,
-  Lock,
 } from "lucide-react";
 import { Card, Button, Spinner, Chip } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ToolDefinition {
   id: string;
@@ -51,7 +46,6 @@ interface IntegrationCardProps {
 
 export function IntegrationCard({
   integration,
-  test,
   isTesting,
   onTestConnection,
   onSyncTools,
@@ -59,7 +53,7 @@ export function IntegrationCard({
   onDelete,
   onSelect,
 }: IntegrationCardProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="bg-content1 border border-default-150 p-5 rounded-xl flex flex-col gap-4 shadow-sm">

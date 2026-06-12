@@ -1,4 +1,3 @@
-"use client";
 
 import * as React from "react";
 import { Bot, User as UserIcon, ShieldCheck, Paperclip } from "lucide-react";

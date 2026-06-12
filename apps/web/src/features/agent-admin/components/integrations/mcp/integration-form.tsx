@@ -1,8 +1,7 @@
-"use client";
 
 import * as React from "react";
 import { Modal, Button, Input, TextArea, TextField, Label, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Integration {
   id: string;
@@ -39,7 +38,7 @@ export function IntegrationForm({
   onSubmit,
   onCancel,
 }: IntegrationFormProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   // Form State
   const [formName, setFormName] = React.useState("");

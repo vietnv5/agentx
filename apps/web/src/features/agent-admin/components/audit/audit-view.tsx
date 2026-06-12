@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { FileCode, AlertCircle } from "lucide-react";
 import { Spinner } from "@heroui/react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { ToolAuditTable } from "./tool-audit-table";
@@ -35,8 +34,9 @@ interface LlmUsageLog {
 }
 
 export function AuditView() {
-  const t = useTranslations();
-  const locale = useLocale();
+  const { t } = useTranslation();
+  const { i18n } = useTranslation();
+  const locale = i18n.language;
   const [toolsLogs, setToolsLogs] = React.useState<ToolExecution[]>([]);
   const [llmLogs, setLlmLogs] = React.useState<LlmUsageLog[]>([]);
   const [loading, setLoading] = React.useState(true);

@@ -1,8 +1,7 @@
-"use client";
 
 import * as React from "react";
 import { Modal, Button, Input, Switch, TextField, Label } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Role {
   id: string;
@@ -34,7 +33,7 @@ export function UserForm({
   onSubmit,
   onCancel,
 }: UserFormProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   const [formName, setFormName] = React.useState("");
   const [formEmail, setFormEmail] = React.useState("");

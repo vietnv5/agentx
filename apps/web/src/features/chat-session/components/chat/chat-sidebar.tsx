@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { Link } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Trash2,
@@ -55,9 +54,9 @@ export function ChatSidebar({
   isOpen,
   onToggle,
 }: ChatSidebarProps) {
-  const t = useTranslations();
-  const pathname = usePathname();
-  const router = useRouter();
+  const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
 
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -80,7 +79,7 @@ export function ChatSidebar({
       console.error("Lỗi khi đăng xuất trên server:", err);
     } finally {
       clearAuth();
-      router.push("/login");
+      navigate("/login");
     }
   };
 
@@ -111,7 +110,7 @@ export function ChatSidebar({
       <div className="w-72 h-full flex flex-col justify-between overflow-hidden">
         {/* Top Header */}
         <div className="p-4 border-b border-default-200/60 flex items-center justify-between">
-          <Link className="flex items-center gap-2" href="/">
+          <Link className="flex items-center gap-2" to="/">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
               AX
             </div>
@@ -184,7 +183,7 @@ export function ChatSidebar({
                     return (
                       <Link
                         key={route.path}
-                        href={route.path}
+                        to={route.path}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-all duration-200 cursor-pointer border ${
                           isActive
                             ? "bg-default-200 hover:bg-default-300/60 text-foreground dark:text-white border-default-300 shadow-sm font-bold"

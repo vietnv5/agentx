@@ -1,26 +1,23 @@
-# Next.js & HeroUI Template
+# Vite & HeroUI Template
 
-This is a template for creating applications using Next.js 16 (app directory) and HeroUI (v3).
+This is a template for creating applications using Vite and HeroUI (v3).
 
-[Try it on CodeSandbox](https://githubbox.com/heroui-inc/heroui/next-app-template)
+[Try it on CodeSandbox](https://githubbox.com/heroui-inc/vite-template)
 
 ## Technologies Used
 
-- [Next.js 16](https://nextjs.org/docs/getting-started)
-- [HeroUI v3](https://heroui.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
+- [Vite](https://vitejs.dev/guide/)
+- [HeroUI v3](https://heroui.com)
+- [Tailwind CSS](https://tailwindcss.com)
 - [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org/)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+- [TypeScript](https://www.typescriptlang.org)
 
 ## How to Use
 
-### Use the template with create-next-app
-
-To create a new project based on this template using `create-next-app`, run the following command:
+To clone the project, run the following command:
 
 ```bash
-npx create-next-app -e https://github.com/heroui-inc/next-app-template
+git clone https://github.com/heroui-inc/vite-template.git
 ```
 
 ### Install dependencies
@@ -39,4 +36,4 @@ npm run dev
 
 ## License
 
-Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template/blob/main/LICENSE).
+Licensed under the [MIT license](https://github.com/heroui-inc/vite-template/blob/main/LICENSE).

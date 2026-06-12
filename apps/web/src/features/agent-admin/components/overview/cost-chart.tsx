@@ -1,9 +1,8 @@
-"use client";
 
-import * as React from "react";
+
 import { TrendingUp } from "lucide-react";
 import { Card } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface CostOverTimeEntry {
   date: string;
@@ -16,7 +15,7 @@ interface CostChartProps {
 }
 
 export function CostChart({ costOverTime }: CostChartProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   const maxCost = Math.max(...costOverTime.map((d) => d.cost), 0.01);
   const chartHeight = 150;

@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button, Modal, Spinner } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -26,7 +25,7 @@ export function ConfirmModal({
   cancelText,
   variant = "danger",
 }: ConfirmModalProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(false);
 
   const handleConfirm = async () => {

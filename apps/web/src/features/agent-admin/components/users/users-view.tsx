@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { Users, AlertCircle } from "lucide-react";
 import { Spinner, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
@@ -30,7 +29,7 @@ interface User {
 }
 
 export function UsersView() {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [users, setUsers] = React.useState<User[]>([]);
   const [roles, setRoles] = React.useState<Role[]>([]);
   const [loading, setLoading] = React.useState(true);

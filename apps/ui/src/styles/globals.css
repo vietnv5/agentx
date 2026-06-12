@@ -1,9 +1,0 @@
-@import "tailwindcss";
-@import "@heroui/styles";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme {
-  --font-sans: "Inter", sans-serif;
-  --font-mono: "Fira Code", monospace;
-}

@@ -1,9 +1,8 @@
-"use client";
 
-import * as React from "react";
+
 import { Bot, Edit2, Trash2 } from "lucide-react";
 import { Card, Button } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Skill {
   name: string;
@@ -31,7 +30,7 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="bg-content1 border border-default-150 p-5 rounded-xl flex flex-col justify-between hover:border-default-300 transition-all duration-300 shadow-sm">

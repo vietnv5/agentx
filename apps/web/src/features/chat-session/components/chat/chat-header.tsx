@@ -1,8 +1,7 @@
-"use client";
 
 import { Bot, PanelLeftOpen } from "lucide-react";
 import { Button } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ChatHeaderProps {
   routedAgentName: string | null;
@@ -15,7 +14,7 @@ export function ChatHeader({
   isSidebarOpen,
   onToggleSidebar,
 }: ChatHeaderProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <div className="h-16 border-b border-default-200/60 px-6 flex items-center justify-between select-none">

@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState } from "react";
 import {
@@ -10,9 +9,9 @@ import {
   Form,
 } from "@heroui/react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Bot } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import axios from "axios";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { authService } from "@/src/features/auth/services/auth.service";
 import { useAuthStore } from "@/src/features/auth/auth-store";
@@ -20,9 +19,9 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { LanguageSwitch } from "@/components/language-switch";
 
 export default function LoginView() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { setAuth, isAuthenticated, user } = useAuthStore();
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,9 +38,9 @@ export default function LoginView() {
   // Nếu đã đăng nhập, chuyển hướng luôn
   React.useEffect(() => {
     if (isHydrated && isAuthenticated && user) {
-      router.replace(user.role?.name === "ADMIN" ? "/admin" : "/chat");
+      navigate(user.role?.name === "ADMIN" ? "/admin" : "/chat", { replace: true });
     }
-  }, [isHydrated, isAuthenticated, user, router]);
+  }, [isHydrated, isAuthenticated, user, navigate]);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -62,9 +61,9 @@ export default function LoginView() {
 
       // Chuyển hướng người dùng dựa vào vai trò
       if (authUser.role?.name === "ADMIN") {
-        router.push("/admin");
+        navigate("/admin");
       } else {
-        router.push("/chat");
+        navigate("/chat");
       }
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response) {

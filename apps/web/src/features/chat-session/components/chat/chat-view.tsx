@@ -1,8 +1,7 @@
-"use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "@heroui/react";
 
 import { chatService } from "@/src/features/chat-session/services/chat.service";
@@ -23,12 +22,11 @@ interface Message {
 }
 
 export default function ChatView() {
-  const t = useTranslations();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [messages, setMessages] = React.useState<Message[]>([]);
-  const [loadingMsgs, setLoadingMsgs] = React.useState(false);
 
   // Global Chat State
   const conversations = useChatStore((state) => state.conversations);
@@ -76,7 +74,6 @@ export default function ChatView() {
   const loadMessages = React.useCallback(
     async (id: string) => {
       try {
-        setLoadingMsgs(true);
         const resData = await chatService.getConversationMessages(id);
 
         setMessages(resData.messages || []);
@@ -97,8 +94,6 @@ export default function ChatView() {
         }
       } catch (err) {
         console.error(t("chat.alert.loadMessagesFailed"), err);
-      } finally {
-        setLoadingMsgs(false);
       }
     },
     [setPendingApproval, t],
@@ -125,7 +120,7 @@ export default function ChatView() {
         targetId = await createConversation(t("chat.history.tempTitle", { index: nextIdx }));
         setActiveId(targetId);
         // Thay đổi URL để reflect đúng ID mới
-        router.replace(`/chat?id=${targetId}`);
+        navigate(`/chat?id=${targetId}`, { replace: true });
       } catch (err) {
         toast.danger(t("chat.alert.createFailed"));
         return;

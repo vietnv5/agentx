@@ -1,13 +1,12 @@
-"use client";
 
-import * as React from "react";
+
 import { Users, UserCheck, UserX, Plus, Edit, Trash } from "lucide-react";
 import {
   Card,
   Button,
   Table,
 } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface Role {
   id: string;
@@ -45,7 +44,7 @@ export function UserTable({
   onDelete,
   onAddClick,
 }: UserTableProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <Card className="lg:col-span-2 bg-content1 border border-default-150 p-6 rounded-xl space-y-4 shadow-sm">

@@ -1,8 +1,7 @@
-"use client";
 
 import * as React from "react";
 import { Modal, Button, Input, TextArea, TextField, Label } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface DocumentUploaderProps {
   isOpen: boolean;
@@ -11,7 +10,7 @@ interface DocumentUploaderProps {
 }
 
 export function DocumentUploader({ isOpen, onSubmit, onCancel }: DocumentUploaderProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [formTitle, setFormTitle] = React.useState("");
   const [formContent, setFormContent] = React.useState("");
   const [formSourceType, setFormSourceType] = React.useState("markdown");

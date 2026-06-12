@@ -1,4 +1,3 @@
-"use client";
 
 import * as React from "react";
 import {
@@ -11,7 +10,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Card, Button, Spinner } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 import { ChatMessageItem } from "./chat-message-item";
 import { ChatMarkdown } from "./chat-markdown";
@@ -47,7 +46,7 @@ export function ChatThread({
   pendingApproval,
   onDecideApproval,
 }: ChatThreadProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [showToolLogs, setShowToolLogs] = React.useState(true);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 

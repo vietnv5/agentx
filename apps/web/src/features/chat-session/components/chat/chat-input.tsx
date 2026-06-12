@@ -1,9 +1,8 @@
-"use client";
 
 import * as React from "react";
 import { Send, Paperclip, Mic, X, Square } from "lucide-react";
 import { Button, Spinner } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
 interface ChatInputProps {
   isStreaming: boolean;
@@ -11,7 +10,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ isStreaming, onSend }: ChatInputProps) {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<any[]>([]);
   const [isRecording, setIsRecording] = React.useState(false);

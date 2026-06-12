@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 import { toast } from "@heroui/react";
 
 export interface ToolLog {
@@ -21,7 +21,7 @@ export interface PendingApproval {
 import { useChatStore } from "./useChatStore";
 
 export function useChatStream() {
-  const t = useTranslations();
+  const { t } = useTranslation();
   const { accessToken } = useAuthStore.getState();
   const isStreaming = useChatStore((state) => state.isStreaming);
   const setIsStreaming = useChatStore((state) => state.setIsStreaming);
@@ -134,7 +134,7 @@ export function useChatStream() {
     onComplete?: () => Promise<void>,
   ) => {
     let url = `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      import.meta.env.VITE_API_URL || "http://localhost:8000"
     }/api/chat/conversations/${activeId}/messages/stream?content=${encodeURIComponent(content)}`;
 
     if (attachments.length > 0) {
@@ -151,7 +151,7 @@ export function useChatStream() {
     onComplete?: () => Promise<void>,
   ) => {
     const url = `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      import.meta.env.VITE_API_URL || "http://localhost:8000"
     }/api/chat/conversations/${activeId}/approval/${approvalId}/decide/stream?approved=${approved}`;
 
     await readStream(url, onComplete);

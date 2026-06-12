@@ -1,11 +1,10 @@
-"use client";
 
 import * as React from "react";
 import { Plug, Plus, AlertCircle } from "lucide-react";
 import { Button, Spinner, toast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { useTranslation } from "react-i18next";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { IntegrationForm } from "./mcp/integration-form";
@@ -39,9 +38,9 @@ interface Integration {
 }
 
 export default function IntegrationsView() {
-  const t = useTranslations();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [integrations, setIntegrations] = React.useState<Integration[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -75,7 +74,7 @@ export default function IntegrationsView() {
       params.delete("id");
     }
     const newSearch = params.toString();
-    router.push(newSearch ? `/admin/integrations?${newSearch}` : `/admin/integrations`);
+    navigate(newSearch ? `/admin/integrations?${newSearch}` : `/admin/integrations`);
   };
 
   const selectedIntegration = React.useMemo(() => {
