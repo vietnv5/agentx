@@ -620,6 +620,46 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
     for (const msg of history) {
       const meta = msg.metadata as any;
       if (msg.role === 'tool') {
+        let parsedOutput: any;
+        try {
+          parsedOutput = JSON.parse(msg.content);
+        } catch {
+          parsedOutput = msg.content;
+        }
+
+        let formattedOutput: any;
+        if (
+          parsedOutput &&
+          typeof parsedOutput === 'object' &&
+          'type' in parsedOutput &&
+          ['text', 'json', 'execution-denied', 'error-text', 'error-json', 'content'].includes(parsedOutput.type)
+        ) {
+          formattedOutput = parsedOutput;
+        } else if (parsedOutput && typeof parsedOutput === 'object' && 'error' in parsedOutput) {
+          const errMessage = String(parsedOutput.error);
+          if (errMessage.includes('Bị từ chối') || errMessage.toLowerCase().includes('denied')) {
+            formattedOutput = {
+              type: 'execution-denied',
+              reason: errMessage,
+            };
+          } else {
+            formattedOutput = {
+              type: 'error-json',
+              json: parsedOutput,
+            };
+          }
+        } else if (typeof parsedOutput === 'string') {
+          formattedOutput = {
+            type: 'text',
+            text: parsedOutput,
+          };
+        } else {
+          formattedOutput = {
+            type: 'json',
+            json: parsedOutput,
+          };
+        }
+
         formattedMessages.push({
           role: 'tool',
           content: [
@@ -627,7 +667,7 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
               type: 'tool-result',
               toolCallId: meta?.toolCallId || 'unknown',
               toolName: meta?.toolName || 'unknown',
-              result: msg.content,
+              output: formattedOutput,
             },
           ],
         });
