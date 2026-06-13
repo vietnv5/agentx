@@ -363,7 +363,10 @@ Hãy phân tích tin nhắn và quyết định gửi yêu cầu này tới Spec
 
     // Lấy danh sách tool permissions của role để kiểm tra quyền
     const rolePermissions = await this.db.query.toolPermissions.findMany({
-      where: eq(schema.toolPermissions.roleId, user.roleId),
+      where: and(
+        eq(schema.toolPermissions.roleId, user.roleId),
+        eq(schema.toolPermissions.isActive, true),
+      ),
     });
 
     while (stepCount < maxSteps) {

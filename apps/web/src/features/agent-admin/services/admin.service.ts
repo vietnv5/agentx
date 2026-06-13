@@ -189,15 +189,41 @@ export const adminService = {
   },
 
   /**
-   * Thêm/Cập nhật quy tắc phân quyền cho một vai trò
+   * Thêm mới quy tắc phân quyền cho một vai trò
    */
-  async updateRolePermissions(
+  async createToolPermission(
     roleId: string,
-    payload: { toolPattern: string; allowed: boolean },
+    payload: { toolPattern: string; allowed: boolean; isActive?: boolean },
   ) {
     const response = await apiClient.post(
       `/api/admin/users/roles/${roleId}/permissions`,
       payload,
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Cập nhật quy tắc phân quyền theo ID
+   */
+  async updateToolPermission(
+    id: string,
+    payload: { toolPattern?: string; allowed?: boolean; isActive?: boolean },
+  ) {
+    const response = await apiClient.patch(
+      `/api/admin/users/permissions/${id}`,
+      payload,
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Xóa hoàn toàn một quy tắc phân quyền
+   */
+  async deleteToolPermission(id: string) {
+    const response = await apiClient.delete(
+      `/api/admin/users/permissions/${id}`,
     );
 
     return response.data;

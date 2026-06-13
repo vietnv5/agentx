@@ -1,0 +1,1 @@
+ALTER TABLE "tool_permissions" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;

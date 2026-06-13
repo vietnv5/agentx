@@ -6,6 +6,8 @@ import { DRIZZLE_PROVIDER } from '../../database/drizzle.provider';
 import * as schema from '../../database/schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateToolPermissionDto } from './dto/create-tool-permission.dto';
+import { UpdateToolPermissionDto } from './dto/update-tool-permission.dto';
 
 @Injectable()
 export class UsersService {
@@ -134,5 +136,36 @@ export class UsersService {
     }
 
     return this.getToolPermissions(roleId);
+  }
+
+  async createToolPermission(roleId: string, createData: CreateToolPermissionDto) {
+    const [newPerm] = await this.db.insert(schema.toolPermissions).values({
+      roleId,
+      toolPattern: createData.toolPattern,
+      allowed: createData.allowed,
+      isActive: createData.isActive ?? true,
+    }).returning();
+
+    return newPerm;
+  }
+
+  async updatePermission(id: string, updateData: UpdateToolPermissionDto) {
+    const [updated] = await this.db
+      .update(schema.toolPermissions)
+      .set({
+        ...updateData,
+      })
+      .where(eq(schema.toolPermissions.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async deletePermission(id: string) {
+    await this.db
+      .delete(schema.toolPermissions)
+      .where(eq(schema.toolPermissions.id, id));
+
+    return { success: true };
   }
 }

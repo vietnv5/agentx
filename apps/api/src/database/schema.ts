@@ -124,6 +124,7 @@ export const toolPermissions = pgTable('tool_permissions', {
   roleId: uuid('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
   toolPattern: varchar('tool_pattern', { length: 255 }).notNull(),
   allowed: boolean('allowed').default(true).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
 }, (table) => [
   index('idx_tool_permissions_role').on(table.roleId),
 ]);

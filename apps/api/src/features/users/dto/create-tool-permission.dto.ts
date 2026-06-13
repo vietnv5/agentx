@@ -1,29 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
 
-export class UpdateToolPermissionDto {
+export class CreateToolPermissionDto {
   @ApiProperty({
     example: 'git:*',
     description: 'Mẫu regex/wildcard định dạng của tool được cấu hình phân quyền',
-    required: false,
   })
   @IsString()
-  @IsOptional()
-  toolPattern?: string;
+  @IsNotEmpty()
+  toolPattern: string;
 
   @ApiProperty({
     example: true,
     description: 'Cho phép hoặc từ chối chạy các tool khớp với mẫu trên',
-    required: false,
   })
   @IsBoolean()
-  @IsOptional()
-  allowed?: boolean;
+  allowed: boolean;
 
   @ApiProperty({
     example: true,
     description: 'Trạng thái hoạt động của quy tắc phân quyền',
     required: false,
+    default: true,
   })
   @IsBoolean()
   @IsOptional()

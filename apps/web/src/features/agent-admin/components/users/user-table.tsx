@@ -12,7 +12,7 @@ interface Role {
   id: string;
   name: "ADMIN" | "STAFF";
   description?: string;
-  toolPermissions: Array<{ id: string; toolPattern: string; allowed: boolean }>;
+  toolPermissions: Array<{ id: string; toolPattern: string; allowed: boolean; isActive: boolean }>;
 }
 
 interface User {

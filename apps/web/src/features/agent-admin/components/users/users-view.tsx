@@ -1,9 +1,7 @@
-
 import * as React from "react";
 import { Users, AlertCircle } from "lucide-react";
-import { Spinner, toast } from "@heroui/react";
+import { Spinner, toast, Tabs } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-
 
 import { adminService } from "@/src/features/agent-admin/services/admin.service";
 import { UserTable } from "./user-table";
@@ -11,11 +9,18 @@ import { PermissionMatrix } from "./permission-matrix";
 import { UserForm } from "./user-form";
 import { ConfirmModal } from "@/src/components/confirm-modal";
 
+interface PermissionRule {
+  id: string;
+  toolPattern: string;
+  allowed: boolean;
+  isActive: boolean;
+}
+
 interface Role {
   id: string;
   name: "ADMIN" | "STAFF";
   description?: string;
-  toolPermissions: Array<{ id: string; toolPattern: string; allowed: boolean }>;
+  toolPermissions: PermissionRule[];
 }
 
 interface User {
@@ -35,10 +40,11 @@ export function UsersView() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Permission Form State
+  // Tab State
+  const [activeTab, setActiveTab] = React.useState<React.Key>("users-tab");
+
+  // Selected Role for Permission Manager
   const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
-  const [newPattern, setNewPattern] = React.useState("");
-  const [newAllowed, setNewAllowed] = React.useState(true);
 
   // User CRUD Form State
   const [isEditing, setIsEditing] = React.useState(false);
@@ -60,7 +66,6 @@ export function UsersView() {
       setUsers(usersData);
       setRoles(rolesData);
       
-      // Use functional state updater to avoid selectedRole dependency
       setSelectedRole((current) => {
         if (rolesData.length === 0) return null;
         if (!current) return rolesData[0];
@@ -104,34 +109,38 @@ export function UsersView() {
     }
   };
 
-  const handleAddPermission = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRole || !newPattern.trim()) return;
-
+  // Permission Rule CRUD Handlers
+  const handleCreatePermission = async (payload: { toolPattern: string; allowed: boolean; isActive: boolean }) => {
+    if (!selectedRole) return;
     try {
-      await adminService.updateRolePermissions(selectedRole.id, {
-        toolPattern: newPattern.trim(),
-        allowed: newAllowed,
-      });
-      setNewPattern("");
-      toast.success(t("users.alert.updatePermSuccess"));
+      await adminService.createToolPermission(selectedRole.id, payload);
+      toast.success(t("users.matrix.addSuccess"));
       loadData();
     } catch (err: any) {
       toast.danger(t("users.alert.updatePermFailed"));
+      throw err;
     }
   };
 
-  const handleDeletePermission = async (pattern: string) => {
-    if (!selectedRole) return;
+  const handleUpdatePermission = async (id: string, payload: { toolPattern?: string; allowed?: boolean; isActive?: boolean }) => {
     try {
-      await adminService.updateRolePermissions(selectedRole.id, {
-        toolPattern: pattern,
-        allowed: false,
-      });
-      toast.success(t("users.alert.deletePermSuccess"));
+      await adminService.updateToolPermission(id, payload);
+      toast.success(t("users.matrix.updateSuccess"));
+      loadData();
+    } catch (err: any) {
+      toast.danger(t("users.alert.updatePermFailed"));
+      throw err;
+    }
+  };
+
+  const handleDeletePermission = async (id: string) => {
+    try {
+      await adminService.deleteToolPermission(id);
+      toast.success(t("users.matrix.deleteSuccess"));
       loadData();
     } catch (err: any) {
       toast.danger(t("users.alert.deletePermFailed"));
+      throw err;
     }
   };
 
@@ -224,31 +233,44 @@ export function UsersView() {
         onSubmit={handleSubmit}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* User Table (Left Spanning 2) */}
-        <UserTable
-          roles={roles}
-          users={users}
-          onChangeRole={handleChangeRole}
-          onToggleActive={handleToggleActive}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAddClick={handleAddClick}
-        />
-
-        {/* Permission Matrix (Right Spanning 1) */}
-        <PermissionMatrix
-          newAllowed={newAllowed}
-          newPattern={newPattern}
-          roles={roles}
-          selectedRole={selectedRole}
-          onAddPermission={handleAddPermission}
-          onChangeAllowed={setNewAllowed}
-          onChangePattern={setNewPattern}
-          onDeletePermission={handleDeletePermission}
-          onSelectRole={setSelectedRole}
-        />
-      </div>
+      {/* Tab Navigation */}
+      <Tabs selectedKey={activeTab as string} onSelectionChange={setActiveTab} className="w-full">
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Users and Roles Control Panel">
+            <Tabs.Tab id="users-tab">
+              {t("users.tabs.users")}
+              <Tabs.Indicator />
+            </Tabs.Tab>
+            <Tabs.Tab id="roles-tab">
+              {t("users.tabs.roles")}
+              <Tabs.Indicator />
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs.ListContainer>
+        
+        <Tabs.Panel id="users-tab" className="pt-6">
+          <UserTable
+            roles={roles}
+            users={users}
+            onChangeRole={handleChangeRole}
+            onToggleActive={handleToggleActive}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onAddClick={handleAddClick}
+          />
+        </Tabs.Panel>
+        
+        <Tabs.Panel id="roles-tab" className="pt-6">
+          <PermissionMatrix
+            roles={roles}
+            selectedRole={selectedRole}
+            onSelectRole={setSelectedRole}
+            onCreatePermission={handleCreatePermission}
+            onUpdatePermission={handleUpdatePermission}
+            onDeletePermission={handleDeletePermission}
+          />
+        </Tabs.Panel>
+      </Tabs>
 
       {/* Delete User Confirm Modal */}
       <ConfirmModal

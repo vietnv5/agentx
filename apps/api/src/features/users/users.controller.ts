@@ -6,6 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateToolPermissionDto } from './dto/create-tool-permission.dto';
 import { UpdateToolPermissionDto } from './dto/update-tool-permission.dto';
 
 @ApiTags('Admin Users')
@@ -48,13 +49,30 @@ export class UsersController {
   }
 
   @Post('roles/:roleId/permissions')
-  @ApiOperation({ summary: 'Cập nhật phân quyền sử dụng công cụ theo vai trò' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Cập nhật phân quyền thành công' })
-  updateToolPermission(
+  @ApiOperation({ summary: 'Thêm mới một quy tắc phân quyền sử dụng công cụ' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Thêm mới phân quyền thành công' })
+  createToolPermission(
     @Param('roleId') roleId: string,
+    @Body() body: CreateToolPermissionDto,
+  ) {
+    return this.usersService.createToolPermission(roleId, body);
+  }
+
+  @Patch('permissions/:id')
+  @ApiOperation({ summary: 'Cập nhật một quy tắc phân quyền cụ thể (cho phép/từ chối hoặc kích hoạt/vô hiệu hóa)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Cập nhật quy tắc phân quyền thành công' })
+  updatePermission(
+    @Param('id') id: string,
     @Body() body: UpdateToolPermissionDto,
   ) {
-    return this.usersService.updateToolPermission(roleId, body.toolPattern, body.allowed);
+    return this.usersService.updatePermission(id, body);
+  }
+
+  @Delete('permissions/:id')
+  @ApiOperation({ summary: 'Xóa hoàn toàn một quy tắc phân quyền sử dụng công cụ khỏi cơ sở dữ liệu' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Xóa quy tắc phân quyền thành công' })
+  deletePermission(@Param('id') id: string) {
+    return this.usersService.deletePermission(id);
   }
 
   @Post()
