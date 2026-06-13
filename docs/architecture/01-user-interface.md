@@ -20,9 +20,9 @@
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Vite 6 SPA |
 | UI Library | HeroUI 3 + Tailwind CSS v4 |
-| AI Chat Hook | `useChat()` từ `@ai-sdk/react` (Vercel AI SDK UI) |
+| AI Chat Hook | Custom `useChatStream()` hook (đọc SSE qua fetch body reader) |
 | Streaming | Server-Sent Events (SSE) |
 | State Management | React hooks + Zustand (cho global state) |
 | Markdown Rendering | `react-markdown` + `remark-gfm` |
@@ -99,38 +99,83 @@ src/features/chat-session/
 
 ## 3. Streaming Implementation
 
-### 3.1 Sử dụng `useChat()` từ Vercel AI SDK
+### 3.1 Sử dụng Custom Hook `useChatStream`
+
+Để có toàn quyền kiểm soát luồng SSE, tích hợp Bearer token thủ công và xử lý các sự kiện đặc thù (phân vai, gọi tool, human-approval), ứng dụng tự triển khai cơ chế đọc stream bằng fetch reader:
 
 ```typescript
 // src/features/chat-session/hooks/useChatStream.ts
-'use client';
+import * as React from "react";
+import { useAuthStore } from "@/src/features/auth/auth-store";
+import { useTranslation } from "react-i18next";
+import { toast } from "@heroui/react";
 
-import { useChat } from '@ai-sdk/react';
-import { useAuthStore } from '@/features/auth/auth-store';
+export function useChatStream() {
+  const { accessToken } = useAuthStore.getState();
+  const [isStreaming, setIsStreaming] = React.useState(false);
+  const [streamingText, setStreamingText] = React.useState("");
+  const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(null);
 
-export function useChatStream(conversationId: string) {
-  const { accessToken } = useAuthStore();
+  const readStream = async (url: string, onComplete?: () => Promise<void>) => {
+    setIsStreaming(true);
+    setStreamingText("");
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-  const chatHelpers = useChat({
-    api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
-    id: conversationId,
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-    },
-    body: {
-      conversationId,
-    },
-    onError: (error) => {
-      // Handle AUTH_REQUIRED errors
-      if (error.message.includes('AUTH_REQUIRED')) {
-        // Trigger auth prompt UI
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Failed to initialize stream reader");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const cleanLine = line.trim();
+          if (cleanLine.startsWith("data:")) {
+            const eventWrapper = JSON.parse(cleanLine.slice(5).trim());
+            const { event, data } = eventWrapper;
+
+            if (event === "agent_routing") {
+              setRoutedAgentName(data.agentName);
+            } else if (event === "token") {
+              setStreamingText((prev) => prev + data);
+            } else if (event === "complete" && onComplete) {
+              await onComplete();
+            }
+            // Xử lý các event khác: tool_start, tool_end, tool_approval_required, error...
+          }
+        }
       }
-    },
-  });
+    } catch (err: any) {
+      toast.danger("Lỗi kết nối stream");
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  const sendMessage = async (activeId: string, content: string) => {
+    const url = `${
+      import.meta.env.VITE_API_URL || "http://localhost:8000"
+    }/api/chat/conversations/${activeId}/messages/stream?content=${encodeURIComponent(content)}`;
+    await readStream(url);
+  };
 
   return {
-    ...chatHelpers,
-    // Custom helpers
+    isStreaming,
+    streamingText,
+    routedAgentName,
+    sendMessage,
   };
 }
 ```

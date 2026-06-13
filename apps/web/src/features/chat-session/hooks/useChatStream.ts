@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { useAuthStore } from "@/src/features/auth/auth-store";
+import { refreshAccessToken } from "@/src/lib/api-client";
 import { useTranslation } from "react-i18next";
 import { toast } from "@heroui/react";
 
@@ -22,7 +23,6 @@ import { useChatStore } from "./useChatStore";
 
 export function useChatStream() {
   const { t } = useTranslation();
-  const { accessToken } = useAuthStore.getState();
   const isStreaming = useChatStore((state) => state.isStreaming);
   const setIsStreaming = useChatStore((state) => state.setIsStreaming);
   const [routedAgentName, setRoutedAgentName] = React.useState<string | null>(
@@ -44,11 +44,21 @@ export function useChatStream() {
     setPendingApproval(null);
 
     try {
-      const response = await fetch(url, {
+      let token = useAuthStore.getState().accessToken;
+      let response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
+
+      if (response.status === 401) {
+        token = await refreshAccessToken();
+        response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
 
       const reader = response.body?.getReader();
 

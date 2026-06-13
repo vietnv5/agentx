@@ -44,7 +44,11 @@ i18n
     },
     fallbackLng: defaultLocale,
     supportedLngs: [...locales],
-    interpolation: { escapeValue: false },
+    interpolation: {
+      escapeValue: false,
+      prefix: "{",
+      suffix: "}",
+    },
     detection: {
       order: ["cookie", "navigator"],
       caches: ["cookie"],

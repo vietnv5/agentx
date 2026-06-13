@@ -21,7 +21,7 @@ AgentX sử dụng cơ chế **Dual-Token** để cân bằng bảo mật và tr
 sequenceDiagram
     autonumber
     actor User as 👤 User
-    participant Client as 🖥️ Frontend (Next.js)
+    participant Client as 🖥️ Frontend (Vite SPA)
     participant Server as ⚙️ Backend (NestJS)
     participant DB as 🗄️ PostgreSQL
 
@@ -249,7 +249,7 @@ export const useAuthStore = create<AuthState>()(
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: false,  // Tắt Cookie CORS mặc định
 });
 
@@ -265,7 +265,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = useAuthStore.getState().refreshToken;
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
+          `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
           { refreshToken },
           { 
             headers: {

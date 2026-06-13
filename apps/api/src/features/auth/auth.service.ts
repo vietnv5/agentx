@@ -60,7 +60,7 @@ export class AuthService {
         { sub: user.id, email: user.email, role: user.role.name },
         {
           secret: this.config.get('JWT_ACCESS_SECRET') || 'dev_access_secret_key_should_be_long_and_secure_at_least_32_characters',
-          expiresIn: '15m',
+          expiresIn: this.config.get('JWT_ACCESS_EXPIRES') || '15m',
         },
       );
 
@@ -77,12 +77,14 @@ export class AuthService {
 
   private async generateTokenPair(user: any, userAgent?: string) {
     const roleName = user.role.name;
+    const accessExpires = this.config.get('JWT_ACCESS_EXPIRES') || '15m';
+    const refreshExpires = this.config.get('JWT_REFRESH_EXPIRES') || '7d';
     
     const accessToken = this.jwtService.sign(
       { sub: user.id, email: user.email, role: roleName },
       {
         secret: this.config.get('JWT_ACCESS_SECRET') || 'dev_access_secret_key_should_be_long_and_secure_at_least_32_characters',
-        expiresIn: '15m',
+        expiresIn: accessExpires,
       },
     );
 
@@ -90,11 +92,11 @@ export class AuthService {
       { sub: user.id },
       {
         secret: this.config.get('JWT_REFRESH_SECRET') || 'dev_refresh_secret_key_should_be_long_and_secure_at_least_32_characters',
-        expiresIn: '7d',
+        expiresIn: refreshExpires,
       },
     );
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + this.parseExpiresIn(refreshExpires));
     await this.storeRefreshToken(user.id, this.hashToken(refreshToken), expiresAt, userAgent);
 
     return {
@@ -106,6 +108,23 @@ export class AuthService {
 
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private parseExpiresIn(val: string): number {
+    const match = val.match(/^(\d+)([smhd])$/);
+    if (!match) {
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 7 * 24 * 60 * 60 * 1000 : num * 1000;
+    }
+    const amount = parseInt(match[1], 10);
+    const unit = match[2];
+    switch (unit) {
+      case 's': return amount * 1000;
+      case 'm': return amount * 60 * 1000;
+      case 'h': return amount * 60 * 60 * 1000;
+      case 'd': return amount * 24 * 60 * 60 * 1000;
+      default: return 7 * 24 * 60 * 60 * 1000;
+    }
   }
 
   private sanitizeUser(user: any) {

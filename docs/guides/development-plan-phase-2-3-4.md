@@ -62,7 +62,7 @@ npx drizzle-kit migrate
 ```
 
 ### Bước 3: Biên dịch toàn Monorepo
-Kiểm tra cú pháp và build toàn bộ monorepo (cả backend NestJS và frontend Next.js) để đảm bảo không lỗi:
+Kiểm tra cú pháp và build toàn bộ monorepo (cả backend NestJS và frontend Vite SPA) để đảm bảo không lỗi:
 ```bash
 # Ở thư mục gốc dự án
 pnpm run build
@@ -77,7 +77,7 @@ pnpm run dev
 ```
 *   **Backend API**: Chạy tại `http://localhost:8000/api`
 *   **Swagger API Docs**: Chạy tại `http://localhost:8000/docs`
-*   **Next.js Frontend**: Chạy tại `http://localhost:3000`
+*   **Vite Frontend**: Chạy tại `http://localhost:3000`
 
 Hệ thống sẽ tự động seed vai trò và tài khoản Admin mặc định khi start NestJS lần đầu:
 *   **Email**: `admin@agentx.local`

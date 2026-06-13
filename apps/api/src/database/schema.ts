@@ -262,7 +262,9 @@ export const knowledgeChunks = pgTable('knowledge_chunks', {
   documentId: uuid('document_id').notNull().references(() => knowledgeDocuments.id, { onDelete: 'cascade' }),
   chunkIndex: integer('chunk_index').notNull(),
   content: text('content').notNull(),
-  embedding: vector('embedding', { dimensions: 1536 }).notNull(),
+  // LOCAL MODEL note: Sử dụng 768 dimensions cho model local 'nomic-embed-text'.
+  // Nếu chuyển lại dùng OpenAI (text-embedding-3-small), hãy đổi thành 1536.
+  embedding: vector('embedding', { dimensions: 768 }).notNull(),
   tokenCount: integer('token_count'),
   metadata: jsonb('metadata').default('{}'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

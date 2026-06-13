@@ -36,6 +36,54 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+export async function refreshAccessToken(): Promise<string> {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const refreshToken = useAuthStore.getState().refreshToken;
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/auth/refresh`,
+      { refreshToken },
+      {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      },
+    );
+
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user,
+    } = response.data;
+
+    useAuthStore
+      .getState()
+      .setAuth(accessToken, newRefreshToken || refreshToken || "", user);
+
+    apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+    processQueue(null, accessToken);
+
+    return accessToken;
+  } catch (refreshError) {
+    processQueue(refreshError, null);
+    useAuthStore.getState().clearAuth();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw refreshError;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -49,59 +97,18 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/auth/refresh`,
-          { refreshToken },
-          {
-            headers: {
-              Authorization: `Bearer ${refreshToken}`,
-            },
-          },
-        );
-
-        const {
-          accessToken,
-          refreshToken: newRefreshToken,
-          user,
-        } = response.data;
-
-        useAuthStore
-          .getState()
-          .setAuth(accessToken, newRefreshToken || refreshToken || "", user);
-
-        apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
-        processQueue(null, accessToken);
-
+        const accessToken = await refreshAccessToken();
+        if (originalRequest.headers.set) {
+          originalRequest.headers.set("Authorization", `Bearer ${accessToken}`);
+        } else {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
         return apiClient(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
-        useAuthStore.getState().clearAuth();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 

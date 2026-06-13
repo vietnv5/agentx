@@ -91,64 +91,45 @@ apps/api/
 
 ---
 
-### 1.2 Frontend (Next.js 15 + App Router)
-Thư mục `apps/web/` được tổ chức tối ưu theo App Router của Next.js 15, kết hợp với cấu trúc Feature-based để phân chia các trang và logic nghiệp vụ.
+### 1.2 Frontend (Vite 6 + React Router 7 SPA)
+Thư mục `apps/web/` là ứng dụng Single Page Application (SPA) thuần client-side được xây dựng trên nền tảng Vite 6 và React Router 7. Hệ thống được tổ chức theo cấu trúc Feature-based giúp mở rộng dễ dàng.
 
 #### Sơ đồ cấu trúc thư mục Frontend:
 ```
 apps/web/
 ├── public/                        # Static assets (images, fonts, icons)
 ├── src/
-│   ├── app/                       # Routing Layer (Next.js App Router)
-│   │   ├── (auth)/                # Route Group cho các trang xác thực
-│   │   │   ├── login/
-│   │   │   │   └── page.tsx       # Trang đăng nhập
-│   │   │   └── layout.tsx
-│   │   ├── (dashboard)/           # Route Group cho hệ thống Chat & Admin Panel
-│   │   │   ├── admin/
-│   │   │   │   ├── agents/        # Quản lý Agents
-│   │   │   │   ├── integrations/  # Quản lý MCP Servers
-│   │   │   │   └── page.tsx       # Tổng quan Admin Panel
-│   │   │   ├── chat/
-│   │   │   │   └── page.tsx       # Giao diện Chat chính với AI Agents
-│   │   │   └── layout.tsx         # Sidebar, Navbar dùng chung
-│   │   ├── globals.css            # CSS toàn cục & Tailwind v4
-│   │   ├── layout.tsx             # Root layout cấu hình HTML/Body
-│   │   └── providers.tsx          # Wrapper cho RouterProvider, AuthProvider
+│   ├── App.tsx                    # Định nghĩa các routes và code-splitting (lazy load)
+│   ├── main.tsx                   # Điểm khởi động ứng dụng (bootstrap), load global providers
+│   ├── i18n/                      # Cấu hình đa ngôn ngữ (react-i18next)
+│   │   ├── config.ts
+│   │   └── index.ts
 │   │
-│   ├── components/                # Shared Components (Chỉ chứa UI Components dùng chung)
-│   │   ├── ui/                    # Wrapper tùy biến các component từ HeroUI
-│   │   │   ├── button.tsx
-│   │   │   ├── input.tsx
-│   │   │   └── modal.tsx
-│   │   └── layout/                # Sidebar, Header, Footer
+│   ├── layouts/                   # Layouts chứa khung bao ngoài các routes
+│   │   ├── layout-wrapper.tsx     # Khung layout cho trang public (Navbar + Footer)
+│   │   ├── dashboard-layout.tsx   # Khung layout Dashboard (Sidebar, Auth guard)
+│   │   └── auth-layout.tsx        # Khung layout Login/Auth
 │   │
-│   ├── config/                    # Config constants, env
-│   ├── hooks/                     # Shared Custom Hooks (e.g., useLocalStorage)
-│   ├── lib/                       # Khởi tạo các SDK client (axios, socket.io client)
+│   ├── pages/                     # Tệp view làm điểm kết nối (Home, About, Docs, Pricing...)
+│   │   ├── home.tsx
+│   │   ├── about.tsx
+│   │   └── ...
+│   │
+│   ├── components/                # UI Components dùng chung (siteConfig, icons, confirm-modal...)
+│   ├── config/                    # Config constants, siteConfig
+│   ├── hooks/                     # Custom Hooks dùng chung
+│   ├── lib/                       # SDK client và axios client instance
 │   │   └── api-client.ts
-│   │
 │   ├── types/                     # TypeScript definitions toàn cục
 │   │
-│   └── features/                  # Feature Modules (Chứa logic và components riêng)
-│       ├── auth/                  # Feature Login/Logout
-│       │   ├── components/        # LoginForm component
-│       │   ├── hooks/             # useAuth hook quản lý token
-│       │   ├── services/          # Các hàm gọi API đăng nhập, logout
-│       │   └── auth-store.ts      # State management (Zustand/Jotai) của auth
-│       │
-│       ├── chat-session/          # Feature hội thoại với Agent
-│       │   ├── components/        # ChatWindow, MessageBubble, TypingIndicator
-│       │   ├── hooks/             # useChatStream (nhận token real-time)
-│       │   └── services/
-│       │
-│       └── agent-admin/           # Feature cấu hình Agent dành cho Admin
-│           ├── components/        # AgentForm, ToolSelector, ServerConfigForm
-│           └── services/
+│   └── features/                  # Feature Modules (Chứa logic và components riêng biệt)
+│       ├── auth/                  # Feature Login/Logout (auth-store, auth.service)
+│       ├── chat-session/          # Feature hội thoại (chat-sidebar, chat-thread, useChatStream)
+│       └── agent-admin/           # Feature cấu hình & giám sát Agent dành cho Admin
 ```
 
 #### Quy tắc thiết kế Frontend:
-1. **App Directory mỏng**: Thư mục `src/app/` chỉ nên chứa các file `page.tsx` và `layout.tsx` đóng vai trò là "điểm ghép nối" (view template). Logic nghiệp vụ thực tế, state, và các component phức tạp nên được đưa vào `src/features/`.
+1. **Pages Directory mỏng**: Thư mục `src/pages/` chỉ chứa các Page component làm "điểm ghép nối" (view template). Logic nghiệp vụ thực tế, state, và các component nghiệp vụ phức tạp bắt buộc phải đưa vào `src/features/`.
 2. **Feature Encapsulation**: Một components nằm trong `src/features/auth/` không được import trực tiếp components của `src/features/chat-session/`. Mọi sự chia sẻ components chung bắt buộc phải thông qua thư mục `src/components/`.
 
 ---

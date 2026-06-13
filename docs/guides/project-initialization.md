@@ -78,29 +78,23 @@ npx -y @nestjs/cli new api --directory=api --package-manager=pnpm --strict --ski
 
 ---
 
-## 3. Khởi tạo Frontend (Next.js + HeroUI 3) tại `apps/web`
+## 3. Khởi tạo Frontend (Vite 6 + HeroUI 3 + React Router 7) tại `apps/web`
 
-Giao diện người dùng và Admin Dashboard của AgentX sử dụng **Next.js 15** và thư viện UI **HeroUI 3**.
+Giao diện người dùng và Admin Dashboard của AgentX được xây dựng bằng **Vite 6** kết hợp với **HeroUI 3** và **React Router 7**.
 
-### Bước 3.1: Khởi tạo khung dự án bằng HeroUI CLI
-Di chuyển vào thư mục `apps/` và chạy công cụ CLI chính thức của HeroUI để khởi tạo template Next.js:
+### Bước 3.1: Khởi tạo khung dự án bằng Vite
+Di chuyển vào thư mục `apps/` và chạy lệnh khởi tạo template React TypeScript bằng Vite:
 
 ```bash
 cd apps
-# Khởi tạo dự án Next.js tích hợp sẵn HeroUI 3 sử dụng template App Router
-npx -y heroui-cli@latest init web --template app --package pnpm
+npx -y create-vite@latest web --template react-ts
 ```
-
-**Giải thích các tham số:**
-*   `web`: Tên thư mục dự án sẽ được tạo ra.
-*   `--template app`: Sử dụng template Next.js App Router (khuyên dùng).
-*   `--package pnpm`: Cấu hình pnpm làm package manager mặc định.
 
 ### Bước 3.2: Dọn dẹp tích hợp monorepo
 Sau khi CLI khởi tạo thành công, thực hiện dọn dẹp các tệp tin thừa có thể gây xung đột với monorepo:
-*   Xóa file `apps/web/pnpm-lock.yaml` (nếu có) để tránh xung đột lockfile ở root.
-*   Xóa thư mục `apps/web/.git/` (nếu có) để tránh lồng Git repository.
-*   Xóa thư mục `apps/web/node_modules/` (nếu có) để chuẩn bị cài đặt đồng nhất từ root workspace.
+*   Xóa file `apps/web/pnpm-lock.yaml` để tránh xung đột lockfile ở root.
+*   Xóa thư mục `apps/web/.git/` để tránh lồng Git repository.
+*   Xóa thư mục `apps/web/node_modules/` để chuẩn bị cài đặt đồng nhất từ root workspace.
 
 ---
 
@@ -135,52 +129,72 @@ pnpm sẽ tự động phân tích tất cả các tệp `package.json` trong mo
 
 ## 5. Thiết lập mã nguồn cơ bản ban đầu (Boilerplate Integration)
 
-### 5.1 Cấu hình Frontend (Next.js + HeroUI v3)
+### 5.1 Cấu hình Frontend (Vite 6 + HeroUI 3 + React Router 7)
 
-Do **HeroUI v3** không yêu cầu và không hỗ trợ `HeroUIProvider` toàn cục, việc tích hợp Next.js App Router client-side routing được thực hiện qua `RouterProvider`.
-
-#### 1. Tạo Client-side Router Provider
-Tạo file `apps/web/src/app/providers.tsx`:
+#### 1. Tạo Entry Point (`apps/web/src/main.tsx`)
+Điểm khởi động của ứng dụng, chịu trách nhiệm bootstrap và cung cấp các provider chính (Routing, Theme, Toast):
 ```tsx
-"use client";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router";
+import { ThemeProvider } from "next-themes";
+import { Toast } from "@heroui/react";
 
-import * as React from "react";
-import { RouterProvider } from "@heroui/react";
-import { useRouter } from "next/navigation";
+import App from "./App.tsx";
+import "./i18n"; // Khởi tạo i18next
+import "@/styles/globals.css";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
-  return (
-    <RouterProvider navigate={router.push}>
-      {children}
-    </RouterProvider>
-  );
-}
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <Toast.Provider />
+        <App />
+      </ThemeProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+);
 ```
 
-#### 2. Tích hợp vào Root Layout
-Cập nhật `apps/web/src/app/layout.tsx`:
+#### 2. Định nghĩa App Component (`apps/web/src/App.tsx`)
 ```tsx
-import { Providers } from "./providers";
-import "./globals.css";
+import { Route, Routes, Navigate } from "react-router";
+import { lazy, Suspense } from "react";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Layouts
+import LayoutWrapper from "@/layouts/layout-wrapper";
+import AuthLayout from "@/layouts/auth-layout";
+import DashboardLayout from "@/layouts/dashboard-layout";
+
+const HomePage = lazy(() => import("@/pages/home"));
+
+function App() {
   return (
-    <html lang="vi" className="dark">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route element={<LayoutWrapper />}>
+          <Route path="/" element={<HomePage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
+
+export default App;
 ```
 
-#### 3. Cấu hình CSS (`apps/web/src/app/globals.css`)
+#### 3. Cấu hình CSS (`apps/web/src/styles/globals.css`)
 Import Tailwind v4 và styles của HeroUI:
 ```css
 @import "tailwindcss";
 @import "@heroui/styles";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "Fira Code", monospace;
+}
 ```
 
 ---
@@ -269,7 +283,7 @@ Kiểm tra biên dịch dự án Backend và Frontend để đảm bảo tất c
 # Build Backend NestJS
 pnpm --filter api build
 
-# Build Frontend Next.js
+# Build Frontend Vite SPA
 pnpm --filter web build
 ```
 

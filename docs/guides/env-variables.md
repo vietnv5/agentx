@@ -98,16 +98,15 @@
 | Variable | Required | Default | Mô tả |
 |----------|:--------:|---------|-------|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OpenTelemetry collector endpoint |
-
 ---
 
 ## 2. Frontend Environment Variables (`apps/web/.env`)
 
 | Variable | Required | Default | Mô tả |
 |----------|:--------:|---------|-------|
-| `NEXT_PUBLIC_API_URL` | **Yes** | — | URL backend API |
+| `VITE_API_URL` | **Yes** | — | URL backend API |
 
-> **Lưu ý**: Biến `NEXT_PUBLIC_*` sẽ được exposed ra browser. KHÔNG đặt secrets ở đây.
+> **Lưu ý**: Các biến bắt đầu bằng tiền tố `VITE_` sẽ được exposed ra trình duyệt thông qua `import.meta.env`. KHÔNG đặt secrets ở đây.
 
 ---
 
@@ -168,7 +167,7 @@ CORS_ORIGINS=http://localhost:3000
 
 ```env
 # ─── API Connection ──────────────────────
-NEXT_PUBLIC_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
 ```
 
 ---

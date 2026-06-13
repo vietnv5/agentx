@@ -1,7 +1,7 @@
 # Docker Deployment Guide
 
 Tài liệu này hướng dẫn chi tiết cách đóng gói dưới dạng container (Dockerization) và triển khai toàn bộ hệ thống AgentX bằng **Docker** và **Docker Compose**. Hệ thống bao gồm 4 thành phần chính:
-1. **Frontend**: Next.js 15 (cấu hình Standalone build để giảm dung lượng image).
+1. **Frontend**: Vite 6 SPA (đóng gói bằng Nginx để tối ưu hiệu năng và phục vụ static files).
 2. **Backend**: NestJS (cấu hình Multi-stage build tách biệt môi trường builder và runner).
 3. **Database**: PostgreSQL 16 tích hợp sẵn extension `pgvector` phục vụ tìm kiếm Vector (RAG).
 4. **Cache / Session Store**: Redis 7.
@@ -56,69 +56,48 @@ CMD ["node", "dist/main.js"]
 ```
 
 ---
-
 ### 1.2 Frontend Dockerfile (`apps/web/Dockerfile`)
-Next.js 15 hỗ trợ tính năng xuất bản độc lập (`output: "standalone"`). Cơ chế này tự động gom tất cả code và node_modules tối thiểu cần thiết để chạy server vào một thư mục duy nhất, giảm dung lượng image từ ~1GB xuống còn **~120MB**.
+Ứng dụng Vite SPA được đóng gói bằng mô hình **Multi-stage build**: Stage 1 build ra thư mục tĩnh `dist/`, Stage 2 copy thư mục này vào **Nginx image** gọn nhẹ để phục vụ static files trực tiếp từ web server.
 
-*Trước khi build, hãy chắc chắn cấu hình `next.config.ts` (hoặc `next.config.js`) có chứa:*
-```typescript
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  output: "standalone", // Bắt buộc để chạy trên Docker tối ưu
-};
-
-export default nextConfig;
-```
-
-#### Dockerfile tối ưu cho Frontend:
+#### Dockerfile cho Frontend Vite:
 ```dockerfile
-# Stage 1: Cài đặt dependencies
-FROM node:24.16-alpine AS deps
+# Stage 1: Build Vite SPA
+FROM node:24.16-alpine AS builder
 WORKDIR /app
 RUN npm install -g pnpm@10.13.1
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-
-# Stage 2: Build Next.js app
-FROM node:24.16-alpine AS builder
-WORKDIR /app
-RUN npm install -g pnpm@10.13.1
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Chèn các biến môi trường cần thiết tại thời điểm build (Build-time Env)
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
 RUN pnpm run build
 
-# Stage 3: Runner image gọn nhẹ
-FROM node:24.16-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Bảo mật: Không chạy container bằng quyền root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy tài nguyên tĩnh và cấu hình standalone
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
+# Stage 2: Serve with Nginx
+FROM nginx:alpine AS runner
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 3000
-
-# Chạy Next.js standalone server
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
----
+#### Cấu hình Nginx đi kèm (`apps/web/nginx.conf`):
+```nginx
+server {
+    listen 3000;
+    server_name localhost;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+```
 
 ## 2. Triển khai Môi trường Phát triển (Development)
 
@@ -193,23 +172,21 @@ services:
       - agentx-network
     command: pnpm run start:dev
 
-  # 4. Frontend Service (Next.js)
+  # 4. Frontend Service (Vite SPA)
   frontend:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:8000
+        - VITE_API_URL=http://localhost:8000
     container_name: agentx-frontend-dev
     ports:
       - "3000:3000"
     environment:
-      - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8000
     volumes:
       - ./apps/web:/app
       - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     networks:
@@ -328,14 +305,12 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL}
+        - VITE_API_URL=${PUBLIC_API_URL}
     container_name: agentx-frontend-prod
     expose:
       - "3000"
     environment:
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_API_URL=${PUBLIC_API_URL}
+      - VITE_API_URL=${PUBLIC_API_URL}
     depends_on:
       - backend
     networks:

@@ -36,11 +36,12 @@ export class LlmProviderFactory {
   }
 
   getEmbeddingProvider(model: string, config: any = {}): any {
-    const openaiApiKey = config.apiKey || this.getApiKeyFromEnv('openai');
-    if (!openaiApiKey) {
+    const provider = process.env.EMBEDDING_PROVIDER || 'openai';
+
+    if (provider.toLowerCase() === 'local' || provider.toLowerCase() === 'ollama') {
       const localBaseUrl = this.getBaseUrlFromEnv('local');
       const localApiKey = this.getApiKeyFromEnv('local');
-      this.logger.log(`OpenAI API Key trống. Fallback sang Local AI Embedding: ${localBaseUrl}`);
+      this.logger.log(`Khởi tạo Local AI Embedding: ${localBaseUrl}`);
       const localAi = createOpenAI({
         apiKey: localApiKey,
         baseURL: localBaseUrl,
@@ -50,6 +51,8 @@ export class LlmProviderFactory {
       return localAi.embedding(embedModel);
     }
 
+    // Default to OpenAI
+    const openaiApiKey = config.apiKey || this.getApiKeyFromEnv('openai');
     const apiKey = openaiApiKey;
     const baseURL = config.baseUrl || this.getBaseUrlFromEnv('openai');
     this.logger.log(`Khởi tạo OpenAI Embedding Model: ${model}`);

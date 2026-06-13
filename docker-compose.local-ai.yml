@@ -24,7 +24,7 @@ services:
   ollama-pull-model:
     image: curlimages/curl:latest
     container_name: agentx-ollama-pull-model
-    entrypoint: [ "sh", "-c", "sleep 5 && curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.1:8b-instruct-q8_0\", \"stream\": false}'" ]
+    entrypoint: [ "sh", "-c", "sleep 5 && curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.1:8b-instruct-q8_0\", \"stream\": false}' && curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"nomic-embed-text\", \"stream\": false}'" ]
     depends_on:
       - ollama
     networks:

@@ -105,12 +105,12 @@ export class DatabaseSeeder implements OnApplicationBootstrap {
   }
 
   private async seedDefaultAgents() {
-    // 1. Seed Router Agent nếu chưa tồn tại bất kỳ Router Agent nào
-    const routerExists = await this.db.query.agents.findFirst({
-      where: eq(schema.agents.isRouter, true),
+    // 1. Seed Router Agent nếu chưa tồn tại Router Agent có tên 'System Router'
+    const routerByName = await this.db.query.agents.findFirst({
+      where: eq(schema.agents.name, 'System Router'),
     });
 
-    if (!routerExists) {
+    if (!routerByName) {
       const routerInstructions = this.readPromptFile(
         'system-router.md',
         'Bạn là Router Agent định tuyến yêu cầu của người dùng đến Specialist Agent phù hợp nhất. Trả về JSON { "targetAgentId": "uuid" }'
@@ -128,14 +128,20 @@ export class DatabaseSeeder implements OnApplicationBootstrap {
         isActive: true,
       });
       this.logger.log('Đã seed Router Agent mặc định từ file .md: System Router (Local AI)');
+    } else if (!routerByName.isRouter) {
+      await this.db
+        .update(schema.agents)
+        .set({ isRouter: true })
+        .where(eq(schema.agents.id, routerByName.id));
+      this.logger.log('Đã cập nhật Router Agent mặc định thành isRouter: true');
     }
 
-    // 2. Seed Specialist Agent nếu chưa tồn tại bất kỳ Specialist Agent nào
-    const specialistExists = await this.db.query.agents.findFirst({
-      where: eq(schema.agents.isRouter, false),
+    // 2. Seed Specialist Agent nếu chưa tồn tại Specialist Agent có tên 'General Assistant'
+    const specialistByName = await this.db.query.agents.findFirst({
+      where: eq(schema.agents.name, 'General Assistant'),
     });
 
-    if (!specialistExists) {
+    if (!specialistByName) {
       const assistantInstructions = this.readPromptFile(
         'general-assistant.md',
         'Bạn là trợ lý ảo hữu ích, chạy cục bộ bằng mô hình Llama 3.1 8B.'
@@ -161,6 +167,12 @@ export class DatabaseSeeder implements OnApplicationBootstrap {
       });
 
       this.logger.log('Đã seed Specialist Agent mặc định từ file .md: General Assistant (Local AI)');
+    } else if (specialistByName.isRouter) {
+      await this.db
+        .update(schema.agents)
+        .set({ isRouter: false })
+        .where(eq(schema.agents.id, specialistByName.id));
+      this.logger.log('Đã cập nhật Specialist Agent mặc định thành isRouter: false');
     }
   }
 }

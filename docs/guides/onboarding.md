@@ -53,7 +53,7 @@ Monorepo structure:
 agentx/
 ├── apps/
 │   ├── api/       ← Backend (NestJS)
-│   └── web/       ← Frontend (Next.js)
+│   └── web/       ← Frontend (Vite SPA)
 ├── package.json   ← Root workspace config
 └── pnpm-workspace.yaml
 ```
@@ -119,7 +119,7 @@ cp apps/web/.env.example apps/web/.env
 Mở `apps/web/.env`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
 ```
 
 ---
@@ -211,74 +211,92 @@ Hoặc chạy cả FE + BE cùng lúc:
 pnpm dev
 ```
 
-### 6.2 Frontend UI Stack Setup (HeroUI 3 & Tailwind v4)
+### 6.2 Frontend UI Stack Setup (Vite 6 + HeroUI 3 + React Router 7)
 
-Dự án sử dụng **HeroUI 3** kết hợp với **Tailwind CSS v4** và **React 19** cho giao diện. Dưới đây là cách stack này được thiết lập trong thư mục `apps/web/` để bạn nắm rõ cấu trúc:
+Dự án sử dụng **Vite 6** kết hợp với **HeroUI 3**, **Tailwind CSS v4**, **React 19** và **React Router 7** cho giao diện SPA. Dưới đây là cách stack này được thiết lập:
 
 #### 1. Cài đặt các Package chính
 ```bash
 cd apps/web
-pnpm add @heroui/react @heroui/styles framer-motion
+pnpm add @heroui/react @heroui/styles framer-motion react-router react-dom next-themes react-i18next i18next
+pnpm add -D tailwindcss @tailwindcss/vite vite
 ```
 
-#### 2. Cấu hình Tailwind CSS v4 trong `src/app/globals.css`
-Tailwind v4 đơn giản hóa việc cấu hình bằng cách import trực tiếp trong tệp CSS chính thay vì dùng `tailwind.config.js`:
+#### 2. Cấu hình Tailwind CSS v4 trong `src/styles/globals.css`
+Tailwind v4 đơn giản hóa cấu hình bằng cách import trực tiếp trong tệp CSS chính và sử dụng Vite plugin (`@tailwindcss/vite`):
 ```css
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* Định nghĩa custom CSS variables hoặc theme của HeroUI tại đây */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
-  --color-brand-primary: #10b981;
-  --color-brand-dark: #0f172a;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "Fira Code", monospace;
 }
 ```
 
-#### 3. Cấu hình React Client Provider (`src/app/providers.tsx`)
-Vì Next.js App Router mặc định dùng Server Components, ta cần một Client Component Provider để wrap ứng dụng và cung cấp context cho HeroUI, hỗ trợ client-side routing mượt mà:
+#### 3. Entry Point (`src/main.tsx`)
+Điểm khởi động của ứng dụng, chịu trách nhiệm bootstrap và wrap các provider toàn cục (Routing, Theme, Toast):
 ```tsx
-"use client";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router";
+import { ThemeProvider } from "next-themes";
+import { Toast } from "@heroui/react";
 
-import * as React from "react";
-import { RouterProvider } from "@heroui/react";
-import { useRouter } from "next/navigation";
+import App from "./App.tsx";
+import "./i18n"; // Khởi tạo i18next
+import "@/styles/globals.css";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
-  return (
-    <RouterProvider navigate={router.push}>
-      {children}
-    </RouterProvider>
-  );
-}
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <Toast.Provider />
+        <App />
+      </ThemeProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+);
 ```
 
-#### 4. Tích hợp Provider vào Root Layout (`src/app/layout.tsx`)
+#### 4. Route Định Tuyến Chính (`src/App.tsx`)
+Khai báo toàn bộ layout và route của ứng dụng, hỗ trợ dynamic import (lazy-loading) để tối ưu dung lượng bundle:
 ```tsx
-import { Providers } from "./providers";
-import "./globals.css";
+import { Route, Routes, Navigate } from "react-router";
+import { lazy, Suspense } from "react";
 
-export const metadata = {
-  title: "AgentX — Platform",
-  description: "Enterprise Multi-Agent Platform",
-};
+// Layouts
+import DashboardLayout from "@/layouts/dashboard-layout";
+import AuthLayout from "@/layouts/auth-layout";
+import LayoutWrapper from "@/layouts/layout-wrapper";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Lazy-loaded pages
+const HomePage = lazy(() => import("@/pages/home"));
+const LoginPage = lazy(() => import("@/features/auth/components/login/login-view"));
+const ChatPage = lazy(() => import("@/features/chat-session/components/chat/chat-view"));
+
+function App() {
   return (
-    <html lang="vi" className="dark">
-      <body className="min-h-screen bg-background text-foreground antialiased">
-        <Providers>
-          {children}
-        </Providers>
-      </body>
-    </html>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route element={<LayoutWrapper />}>
+          <Route path="/" element={<HomePage />} />
+        </Route>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
+        <Route element={<DashboardLayout />}>
+          <Route path="/chat" element={<ChatPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
+
+export default App;
 ```
 
 ---
@@ -410,7 +428,7 @@ pnpm install --no-strict-peer-dependencies
 
 ### HeroUI components not rendering
 
-Kiểm tra `providers.tsx` đã wrap `RouterProvider` và `globals.css` đã import `@heroui/styles`.
+Kiểm tra `main.tsx` đã import `@/styles/globals.css` và globals.css đã import `@heroui/styles`.
 
 ---
 

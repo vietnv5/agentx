@@ -8,9 +8,10 @@ export class LlmService {
 
   constructor(private readonly providerFactory: LlmProviderFactory) {}
 
-  async getEmbedding(text: string, model = 'text-embedding-3-small'): Promise<number[]> {
+  async getEmbedding(text: string, model?: string): Promise<number[]> {
     try {
-      const llmModel = this.providerFactory.getEmbeddingProvider(model);
+      const embeddingModel = model || process.env.EMBEDDING_OPENAI_MODEL_ID || 'text-embedding-3-small';
+      const llmModel = this.providerFactory.getEmbeddingProvider(embeddingModel);
       const { embedding } = await embed({
         model: llmModel,
         value: text,

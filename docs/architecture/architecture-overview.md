@@ -151,7 +151,7 @@ Agent Definition
 
 | Component | Description | Technology |
 |-----------|-------------|------------|
-| **Chat UI** | Giao diện chat đơn giản — hỗ trợ streaming response, hiển thị trạng thái tool đang chạy, lịch sử hội thoại | Next.js + Vercel AI SDK |
+| **Chat UI** | Giao diện chat đơn giản — hỗ trợ streaming response, hiển thị trạng thái tool đang chạy, lịch sử hội thoại | Vite 6 + React Router 7 + react-i18next |
 | **Embedded Widget** | Nhúng được vào hệ thống nội bộ (ERP, Portal) dưới dạng iframe hoặc web component | Web Component / iframe |
 | **WebSocket / SSE** | Stream token từng phần từ server → UI, hiển thị typing indicator | SSE (Server-Sent Events) |
 
@@ -574,8 +574,8 @@ sequenceDiagram
 
 | Layer | Technology | Lý do chọn |
 |-------|-----------|------------|
-| **Frontend (Chat UI)** | Next.js 15 + HeroUI 3 + Tailwind CSS v4 + Vercel AI SDK | Giao diện hiện đại, tối ưu hiệu năng, responsive, streaming out-of-box, dễ embed |
-| **Admin Panel** | Next.js 15 (same codebase, admin routes) + HeroUI 3 | Tái sử dụng components, single deployment |
+| **Frontend (Chat UI)** | Vite 6 + HeroUI 3 + Tailwind CSS v4 + React Router 7 | Giao diện SPA hiện đại, tối ưu hiệu năng, responsive, streaming out-of-box, dễ embed |
+| **Admin Panel** | Vite 6 + HeroUI 3 + React Router 7 (same codebase, dashboard layouts) | Tái sử dụng components, single deployment |
 | **Backend** | Node.js (NestJS) + TypeScript | Framework modular, cấu trúc rõ ràng, dễ scale và bảo trì, phù hợp chạy các bộ thư viện AI SDK |
 | **Agent Orchestration** | Vercel AI SDK Core & UI | Đơn giản hóa việc quản lý vòng lặp ReAct, hỗ trợ streaming UI và quản lý MCP native |
 | **LLM Primary** | Anthropic Claude API (Sonnet / Haiku) | Tool use tốt nhất, streaming, large context |
@@ -596,8 +596,8 @@ sequenceDiagram
 
 ```
 docker-compose.yml
-├── agentx-backend      (Node.js / Hono, port 8000)
-├── agentx-frontend     (Next.js: Chat UI + Admin Panel, port 3000)
+├── agentx-backend      (NestJS, port 8000)
+├── agentx-frontend     (Vite 6 SPA, port 3000)
 ├── postgres            (port 5432, with pgvector extension)
 └── redis               (port 6379)
 ```
@@ -607,8 +607,8 @@ docker-compose.yml
 
 ```mermaid
 graph TB
-    CDN["CDN / Edge"] --> FE["Frontend<br/>(Chat UI + Admin Panel)"]
-    LB["Load Balancer"] --> API["AgentX Backend<br/>(Node.js / Hono, k8s auto-scale)"]
+    CDN["CDN / Edge"] --> FE["Frontend<br/>(Vite 6 SPA)"]
+    LB["Load Balancer"] --> API["AgentX Backend<br/>(NestJS, k8s auto-scale)"]
     API --> PG["PostgreSQL<br/>(Managed)"]
     API --> REDIS["Redis<br/>(Managed)"]
     API --> OBS["Observability<br/>(Grafana Cloud)"]
